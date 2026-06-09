@@ -17,6 +17,19 @@
   a{color:var(--verde2);}
   .wrap{max-width:1180px;margin:0 auto;padding:0 18px 60px;}
 
+  /* ===== PORTA DE ENTRADA (gate de login) ===== */
+  #gate{position:fixed;inset:0;z-index:3000;background:linear-gradient(135deg,#101418,#1c2228);display:flex;align-items:center;justify-content:center;padding:20px;}
+  .gate-card{background:#fff;border-radius:16px;padding:34px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.45);border-top:4px solid var(--verde);}
+  .gate-brand b{font-size:30px;font-weight:800;letter-spacing:1px;color:var(--preto);display:block;line-height:1;}
+  .gate-brand span{font-size:10px;letter-spacing:5px;color:var(--muted);display:block;margin-top:3px;}
+  .gate-card h1{font-size:19px;margin:22px 0 3px;font-weight:700;}
+  .gate-card>p{color:var(--muted);font-size:12.5px;margin:0 0 22px;}
+  .gate-form{display:flex;flex-direction:column;gap:10px;text-align:left;}
+  .gate-form input{padding:11px 13px;}
+  #gateMsg{font-size:12.5px;color:#c0392b;min-height:16px;text-align:center;}
+  .gate-restrito{margin-top:20px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--cinza2);padding-top:14px;}
+  #hdrUser a{color:#fff;cursor:pointer;text-decoration:underline;}
+
   /* ===== HEADER / LOGO ===== */
   header{background:var(--preto);color:#fff;padding:16px 0;border-bottom:3px solid var(--verde);box-shadow:0 2px 10px rgba(0,0,0,.18);}
   .hdr{max-width:1180px;margin:0 auto;padding:0 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
@@ -180,6 +193,22 @@
 </head>
 <body>
 
+<!-- ===== PORTA DE ENTRADA (login obrigatório) ===== -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-brand"><b>MAXIMOS</b><span>SOLUÇÕES EMPRESARIAIS</span></div>
+    <h1>Estudo Tributário</h1>
+    <p>Sistema interno de planejamento tributário</p>
+    <div class="gate-form">
+      <input id="gateEmail" type="email" placeholder="E-mail" autocomplete="username" onkeydown="if(event.key==='Enter')gateLogin()">
+      <input id="gateSenha" type="password" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')gateLogin()">
+      <button class="btn btn-primary" id="gateBtn" onclick="gateLogin()" style="justify-content:center;">Entrar</button>
+      <div id="gateMsg"></div>
+    </div>
+    <div class="gate-restrito">🔒 Acesso restrito à equipe MAXIMOS</div>
+  </div>
+</div>
+
 <header>
   <div class="hdr">
     <div class="logo">
@@ -190,6 +219,7 @@
     <div class="meta">
       <div><b>Estudo Tributário Comparativo</b></div>
       <div id="hdrDate">—</div>
+      <div id="hdrUser" style="display:none;margin-top:7px;font-size:11.5px;"></div>
     </div>
   </div>
 </header>
@@ -1341,11 +1371,31 @@ let estudosCache = [];
 function modoNuvem(){ return !!(supa && usuarioAtual); }
 function atualizarGaleriaCount(){ const el=$('galeriaCount'); if(el) el.textContent = estudosCache.length; }
 
-/* ---- AUTENTICAÇÃO (nuvem compartilhada) ---- */
+/* ---- AUTENTICAÇÃO (nuvem compartilhada + porta de entrada) ---- */
+function gateLock(){ const g=$('gate'); if(g) g.style.display='flex'; atualizarHeaderUser(); }
+function gateUnlock(){ const g=$('gate'); if(g) g.style.display='none'; atualizarHeaderUser(); }
+function atualizarHeaderUser(){
+  const el=$('hdrUser'); if(!el) return;
+  if(usuarioAtual){ el.style.display='block'; el.innerHTML='👤 '+escapeHtml(usuarioAtual.email||'')+' · <a onclick="fazerLogout()">Sair</a>'; }
+  else { el.style.display='none'; el.innerHTML=''; }
+}
+async function gateLogin(){
+  const email=($('gateEmail').value||'').trim(), senha=$('gateSenha').value||'', msg=$('gateMsg'), btn=$('gateBtn');
+  if(!supa){ if(msg) msg.textContent='Nuvem não configurada — contate o administrador.'; return; }
+  if(!email||!senha){ if(msg) msg.textContent='Informe e-mail e senha.'; return; }
+  btn.disabled=true; btn.textContent='Entrando...';
+  try{
+    const { data, error } = await supa.auth.signInWithPassword({ email, password: senha });
+    if(error) throw error;
+    usuarioAtual = data.user; gateUnlock(); await carregarEstudos();
+  }catch(e){ if(msg) msg.textContent='❌ '+(((e.message||'').indexOf('Invalid login')>=0)?'E-mail ou senha incorretos.':(e.message||'falha no login')); }
+  finally{ btn.disabled=false; btn.textContent='Entrar'; }
+}
 async function initAuth(){
-  if(!supa) return;
+  if(!supa){ gateUnlock(); return; }   // sem nuvem: não tranca o sistema
   try{ const { data } = await supa.auth.getSession(); usuarioAtual = (data && data.session) ? data.session.user : null; }catch(e){ usuarioAtual=null; }
-  if(usuarioAtual) await carregarEstudos();
+  if(usuarioAtual){ gateUnlock(); await carregarEstudos(); }
+  // sem sessão: a porta de entrada (gate) continua visível
 }
 function renderAuthBar(){
   const bar=$('authBar'), modo=$('galeriaModo'), tb=$('galeriaToolbar'); if(!bar) return;
@@ -1387,7 +1437,9 @@ async function fazerLogin(){
 }
 async function fazerLogout(){
   if(supa){ try{ await supa.auth.signOut(); }catch(e){} }
-  usuarioAtual=null; estudosCache=[]; renderAuthBar(); renderGaleria(); atualizarGaleriaCount();
+  usuarioAtual=null; estudosCache=[];
+  fecharGaleria(); gateLock();           // tranca o sistema de novo
+  renderAuthBar(); renderGaleria(); atualizarGaleriaCount();
 }
 async function carregarEstudos(){
   if(modoNuvem()){
