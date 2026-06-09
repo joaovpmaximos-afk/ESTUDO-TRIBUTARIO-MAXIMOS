@@ -157,9 +157,16 @@
     <h2><span class="ico">🏢</span> Dados da empresa</h2>
     <div class="grid g3">
       <div><label>Razão social / Nome</label><input id="empNome" placeholder="Empresa Exemplo Ltda"></div>
-      <div><label>CNPJ</label><input id="empCnpj" placeholder="00.000.000/0001-00"></div>
+      <div>
+        <label>CNPJ <span class="q">(digite e clique em Puxar)</span></label>
+        <div style="display:flex;gap:6px;">
+          <input id="empCnpj" placeholder="00.000.000/0001-00" style="flex:1;" onkeydown="if(event.key==='Enter')puxarCNPJ()">
+          <button class="btn btn-dark" id="btnCnpj" style="padding:9px 13px;white-space:nowrap;" onclick="puxarCNPJ()">🔍 Puxar</button>
+        </div>
+      </div>
       <div><label>CNAE principal <span class="q">(opcional)</span></label><input id="empCnae" placeholder="0000-0/00"></div>
     </div>
+    <div id="cnpjStatus" style="margin-top:12px;display:none;font-size:12.5px;padding:10px 14px;border-radius:8px;"></div>
     <div class="grid g3" style="margin-top:14px;">
       <div>
         <label>Atividade principal</label>
@@ -367,6 +374,71 @@ function distribuir(){
   const m = (anual/12);
   document.querySelectorAll('.rbtm').forEach(inp=> inp.value = m.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
   updRbt();
+}
+
+/* ============================================================
+   PUXAR DADOS DA RECEITA POR CNPJ (API pública gratuita BrasilAPI)
+   ============================================================ */
+function cnaeParaAtividade(cnae){
+  const div = parseInt(String(cnae||'').replace(/\D/g,'').padStart(7,'0').slice(0,2),10);
+  if(div>=45 && div<=47) return 'comercio';            // comércio/varejo/atacado
+  if(div>=5 && div<=33)  return 'industria';            // extrativa + transformação
+  if(div===49)           return 'transporte_carga';     // transporte terrestre (confirmar carga/passageiro)
+  if(div>=50 && div<=53) return 'transporte_carga';     // água/ar/correios
+  return 'servico_iii';                                 // demais → serviços (Fator R) — confirmar
+}
+function fmtCnae(c){
+  const d = String(c||'').replace(/\D/g,'').padStart(7,'0');
+  return d.slice(0,4)+'-'+d[4]+'/'+d.slice(5,7);
+}
+function fmtCnpj(c){
+  const d = String(c||'').replace(/\D/g,'').padStart(14,'0');
+  return d.slice(0,2)+'.'+d.slice(2,5)+'.'+d.slice(5,8)+'/'+d.slice(8,12)+'-'+d.slice(12,14);
+}
+function statusCnpj(html, cor){
+  const el = $('cnpjStatus');
+  const cores = { info:['#eef4ff','#cdddff','#2b4b80'], ok:['#f0fbf3','#bfe6cb','#1c7a3a'], erro:['#fdeaea','#f3c4c4','#c0392b'] };
+  const [bg,bd,fg] = cores[cor]||cores.info;
+  el.style.display='block'; el.style.background=bg; el.style.border='1px solid '+bd; el.style.color=fg;
+  el.innerHTML = html;
+}
+async function puxarCNPJ(){
+  const raw = ($('empCnpj').value||'').replace(/\D/g,'');
+  if(raw.length!==14){ statusCnpj('⚠️ Digite um CNPJ válido com 14 dígitos.', 'erro'); return; }
+  const btn = $('btnCnpj'); const txt = btn.textContent;
+  btn.disabled=true; btn.textContent='⏳...';
+  statusCnpj('🔎 Consultando a Receita Federal…', 'info');
+  try{
+    const resp = await fetch('https://brasilapi.com.br/api/cnpj/v1/'+raw);
+    if(!resp.ok){ throw new Error(resp.status===404?'CNPJ não encontrado na base da Receita.':'Falha na consulta ('+resp.status+').'); }
+    const d = await resp.json();
+    // preenche campos
+    $('empCnpj').value = fmtCnpj(raw);
+    if(d.razao_social) $('empNome').value = d.razao_social;
+    if(d.cnae_fiscal)  $('empCnae').value = fmtCnae(d.cnae_fiscal);
+    // sugere atividade/anexo
+    const atv = cnaeParaAtividade(d.cnae_fiscal);
+    $('atividade').value = atv; atividadeChange();
+    // monta resumo
+    const simples = d.opcao_pelo_simples===true ? '✅ Optante do Simples'
+                  : d.opcao_pelo_simples===false ? '❌ NÃO optante do Simples'
+                  : 'ℹ️ Situação no Simples não informada';
+    const mei = d.opcao_pelo_mei===true ? ' · <b>MEI</b>' : '';
+    const sit = (d.descricao_situacao_cadastral||'').toUpperCase();
+    const sitTag = sit==='ATIVA' ? '🟢 '+sit : '🔴 '+(sit||'—');
+    statusCnpj(
+      `<b>${d.razao_social||'—'}</b>${d.nome_fantasia?` (${d.nome_fantasia})`:''}<br>`+
+      `CNAE ${fmtCnae(d.cnae_fiscal)} — ${d.cnae_fiscal_descricao||''}<br>`+
+      `Situação: ${sitTag} · Porte: ${d.porte||'—'} · ${d.municipio||''}/${d.uf||''}<br>`+
+      `${simples}${mei}<br>`+
+      `<span style="color:#69757f">↳ Sugeri a atividade <b>${$('atividade').selectedOptions[0].text}</b> pelo CNAE — <b>confira</b>. O RBT12 (faturamento) é sigiloso: preencha abaixo.</span>`,
+      'ok');
+  }catch(e){
+    const off = (!navigator.onLine);
+    statusCnpj('❌ '+(off?'Sem internet — conecte-se para puxar da Receita (ou preencha manualmente).':e.message), 'erro');
+  }finally{
+    btn.disabled=false; btn.textContent=txt;
+  }
 }
 
 function atividadeChange(){
