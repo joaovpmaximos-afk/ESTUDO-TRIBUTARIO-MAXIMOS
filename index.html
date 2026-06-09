@@ -798,6 +798,28 @@ function render(regimes, melhor, data){
    DASHBOARD — gráficos + alíquota efetiva por tributo + conclusões
    ============================================================ */
 const CORES = { simples:'#3b82f6', presumido:'#f59e0b', real:'#8b5cf6' };
+const PALETA = ['#27c24c','#3b82f6','#f59e0b','#8b5cf6','#ef4444','#14b8a6','#ec4899'];
+
+// gráfico de rosca (donut) em SVG puro — composição de tributos
+function donutSVG(items, total){
+  items = (items||[]).filter(it=> it.valor>0);
+  const r=54, cx=70, cy=70, C=2*Math.PI*r;
+  let off=0, segs='';
+  items.forEach((it,i)=>{
+    const len = total>0 ? (it.valor/total)*C : 0;
+    segs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${PALETA[i%PALETA.length]}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    off += len;
+  });
+  const legenda = items.map((it,i)=>`<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:6px"><span style="width:12px;height:12px;border-radius:3px;background:${PALETA[i%PALETA.length]};flex:none"></span><span style="flex:1">${it.label}</span><b>${fmt(it.valor)}</b> <span style="color:#9aa5ad;width:54px;text-align:right">${pct(total>0?it.valor/total*100:0)}</span></div>`).join('');
+  return `<div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap">
+    <svg viewBox="0 0 140 140" style="width:150px;height:150px;flex:none">${segs}
+      <text x="70" y="65" text-anchor="middle" font-size="10" fill="#69757f">Total</text>
+      <text x="70" y="81" text-anchor="middle" font-size="12" font-weight="800" fill="#101418">${fmt(total)}</text>
+    </svg>
+    <div style="flex:1;min-width:230px">${legenda}</div>
+  </div>`;
+}
+
 function renderDashboard(regimes, melhor, data){
   const receita = data.receita;
   const maxTotal = Math.max(...regimes.map(r=>r.total), 1);
@@ -862,10 +884,16 @@ function renderDashboard(regimes, melhor, data){
     concl.push(`Atenção: o Real exige <span class="destaque">escrituração completa</span> e os créditos de PIS/COFINS dependem de insumos elegíveis — valide com a contabilidade.`);
   }
 
+  const donut = donutSVG(melhor.comp||[], melhor.total);
+
   $('dashboard').innerHTML = `
     <div class="dash-sec">
       <h3>📊 Comparativo de carga tributária (alíquota efetiva sobre o faturamento)</h3>
       ${barras}
+    </div>
+    <div class="dash-sec">
+      <h3>🍩 Composição da carga do regime recomendado — ${melhor.nome}</h3>
+      ${donut}
     </div>
     <div class="dash-sec">
       <h3>🧾 Composição por tributo — Base, Valor, Alíquota Nominal e Efetiva</h3>
