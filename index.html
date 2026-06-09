@@ -127,6 +127,14 @@
   /* ===== DASHBOARD ===== */
   .dash-sec{margin-top:22px;}
   .dash-sec h3{font-size:14px;font-weight:700;margin:0 0 12px;color:var(--preto);}
+  .dash-donut{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+  .dash-donut svg{width:148px;height:148px;flex:none;display:block;}
+  .dash-donut .leg{flex:1;min-width:230px;}
+  .dash-donut .leg-row{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:6px;}
+  .dash-donut .leg-row .sw{width:12px;height:12px;border-radius:3px;flex:none;}
+  .dash-donut .leg-row .nm{flex:1;}
+  .dash-donut .leg-row .vl{font-weight:700;}
+  .dash-donut .leg-row .pc{color:#9aa5ad;width:52px;text-align:right;}
   .dash-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:11px;}
   .dash-bar-lbl{width:140px;font-size:12.5px;font-weight:600;flex:none;text-align:right;}
   .dash-bar-track{flex:1;background:var(--cinza2);border-radius:7px;height:30px;position:relative;overflow:hidden;}
@@ -810,22 +818,24 @@ const CORES = { simples:'#1c2228', presumido:'#39414a', real:'#6b7681' };   // t
 const PALETA = ['#27c24c','#101418','#1ea33e','#6b7681','#39414a','#9aa5ad','#c8d0d6']; // verde + preto + cinzas
 
 // gráfico de rosca (donut) em SVG puro — composição de tributos
-function donutSVG(items, total){
+function donutSVG(items, total, efetivaPct){
   items = (items||[]).filter(it=> it.valor>0);
-  const r=54, cx=70, cy=70, C=2*Math.PI*r;
+  const r=50, cx=66, cy=66, C=2*Math.PI*r;
   let off=0, segs='';
   items.forEach((it,i)=>{
     const len = total>0 ? (it.valor/total)*C : 0;
-    segs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${PALETA[i%PALETA.length]}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    segs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${PALETA[i%PALETA.length]}" stroke-width="17" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
     off += len;
   });
-  const legenda = items.map((it,i)=>`<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:6px"><span style="width:12px;height:12px;border-radius:3px;background:${PALETA[i%PALETA.length]};flex:none"></span><span style="flex:1">${it.label}</span><b>${fmt(it.valor)}</b> <span style="color:#9aa5ad;width:54px;text-align:right">${pct(total>0?it.valor/total*100:0)}</span></div>`).join('');
-  return `<div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap">
-    <svg viewBox="0 0 140 140" style="width:150px;height:150px;flex:none">${segs}
-      <text x="70" y="65" text-anchor="middle" font-size="10" fill="#69757f">Total</text>
-      <text x="70" y="81" text-anchor="middle" font-size="12" font-weight="800" fill="#101418">${fmt(total)}</text>
+  const legenda = items.map((it,i)=>`<div class="leg-row"><span class="sw" style="background:${PALETA[i%PALETA.length]}"></span><span class="nm">${it.label}</span><span class="vl">${fmt(it.valor)}</span><span class="pc">${pct(total>0?it.valor/total*100:0)}</span></div>`).join('');
+  return `<div class="dash-donut">
+    <svg viewBox="0 0 132 132" preserveAspectRatio="xMidYMid meet">${segs}
+      <text x="66" y="61" text-anchor="middle" font-size="8.5" fill="#69757f">Carga efetiva</text>
+      <text x="66" y="79" text-anchor="middle" font-size="17" font-weight="800" fill="#101418">${pct(efetivaPct||0)}</text>
     </svg>
-    <div style="flex:1;min-width:230px">${legenda}</div>
+    <div class="leg">${legenda}
+      <div class="leg-row" style="border-top:1px solid var(--cinza2);margin-top:7px;padding-top:9px"><span class="sw" style="background:var(--verde)"></span><span class="nm"><b>Total de tributos</b></span><span class="vl">${fmt(total)}</span><span class="pc"></span></div>
+    </div>
   </div>`;
 }
 
@@ -913,7 +923,7 @@ function renderDashboard(regimes, melhor, data){
     notas.push('Os créditos de PIS/COFINS dependem de insumos elegíveis — confirme a base de crédito com a contabilidade.');
   }
 
-  const donut = donutSVG(melhor.comp||[], melhor.total);
+  const donut = donutSVG(melhor.comp||[], melhor.total, melhor.efetiva);
 
   $('dashboard').innerHTML = `
     <div class="dash-sec">
