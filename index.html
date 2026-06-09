@@ -391,11 +391,16 @@
 <div id="galeriaModal" class="modal-bg" onclick="if(event.target===this)fecharGaleria()">
   <div class="modal">
     <div class="modal-head">
-      <h2 style="margin:0;font-size:18px;">📚 Biblioteca de Estudos</h2>
+      <h2 style="margin:0;font-size:18px;">📚 Biblioteca de Estudos <span id="galeriaModo" class="pill" style="vertical-align:middle"></span></h2>
       <button class="btn btn-ghost" onclick="fecharGaleria()" style="padding:6px 12px;">✕ Fechar</button>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
-      <input id="galeriaBusca" placeholder="🔎 Buscar por grupo ou empresa..." style="flex:1;min-width:200px;" oninput="renderGaleria()">
+
+    <!-- barra de login/usuário -->
+    <div id="authBar"></div>
+
+    <!-- ferramentas (busca/backup) — só quando logado -->
+    <div id="galeriaToolbar" style="display:none;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+      <input id="galeriaBusca" placeholder="🔎 Buscar por grupo, empresa ou CNPJ..." style="flex:1;min-width:200px;" oninput="renderGaleria()">
       <button class="btn btn-ghost" onclick="exportBiblioteca()">⬇️ Backup (exportar)</button>
       <button class="btn btn-ghost" onclick="document.getElementById('importFile').click()">⬆️ Importar backup</button>
       <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBiblioteca(this)">
@@ -412,8 +417,16 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<!-- Supabase (biblioteca de estudos compartilhada na nuvem) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+/* ===== Configuração Supabase (biblioteca compartilhada) ===== */
+const SUPA_URL = 'https://fxbekqnbpumkpwitrsju.supabase.co';
+const SUPA_KEY = 'sb_publishable_guki9WWcXJyVeM3N9pi1mA_ea6ypphQ';
+const supa = (window.supabase && SUPA_URL) ? window.supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+let usuarioAtual = null;
+
 /* ============================================================
    TABELAS DO SIMPLES NACIONAL (LC 123/2006, vigência 2018+)
    Cada faixa: [tetoReceita12m, aliquotaNominal, parcelaDeduzir]
@@ -1316,13 +1329,76 @@ function autoteste(){
 }
 
 /* ============================================================
-   BIBLIOTECA / GALERIA DE ESTUDOS (salvos no navegador via localStorage)
+   BIBLIOTECA / GALERIA DE ESTUDOS
+   Nuvem compartilhada (Supabase) com login; localStorage como fallback.
    ============================================================ */
 const STORAGE_KEY = 'maximos_estudos_v1';
 function lerEstudos(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]; }catch(e){ return []; } }
 function salvarEstudos(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
-function atualizarGaleriaCount(){ const el=$('galeriaCount'); if(el) el.textContent = lerEstudos().length; }
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+let estudosCache = [];
+function modoNuvem(){ return !!(supa && usuarioAtual); }
+function atualizarGaleriaCount(){ const el=$('galeriaCount'); if(el) el.textContent = estudosCache.length; }
+
+/* ---- AUTENTICAÇÃO (nuvem compartilhada) ---- */
+async function initAuth(){
+  if(!supa) return;
+  try{ const { data } = await supa.auth.getSession(); usuarioAtual = (data && data.session) ? data.session.user : null; }catch(e){ usuarioAtual=null; }
+  if(usuarioAtual) await carregarEstudos();
+}
+function renderAuthBar(){
+  const bar=$('authBar'), modo=$('galeriaModo'), tb=$('galeriaToolbar'); if(!bar) return;
+  if(!supa){
+    if(modo) modo.textContent='💻 Local';
+    bar.innerHTML='<div style="background:#fff8e6;border:1px solid #f3e2a8;border-radius:8px;padding:10px 13px;font-size:12.5px;margin-bottom:14px;">⚠️ Nuvem não configurada — os estudos ficam só neste navegador.</div>';
+    if(tb) tb.style.display='flex'; return;
+  }
+  if(!usuarioAtual){
+    if(modo) modo.textContent='🔒 Login';
+    if(tb) tb.style.display='none';
+    bar.innerHTML=`<div style="background:#fff;border:1px solid var(--borda);border-radius:10px;padding:16px;margin-bottom:14px;">
+      <div style="font-weight:700;margin-bottom:8px;">🔒 Entrar na biblioteca compartilhada</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="loginEmail" type="email" placeholder="seu e-mail" style="flex:1;min-width:160px;" onkeydown="if(event.key==='Enter')fazerLogin()">
+        <input id="loginSenha" type="password" placeholder="senha" style="flex:1;min-width:120px;" onkeydown="if(event.key==='Enter')fazerLogin()">
+        <button class="btn btn-primary" id="btnLogin" onclick="fazerLogin()">Entrar</button>
+      </div>
+      <div id="loginMsg" style="font-size:12px;color:#c0392b;margin-top:7px;"></div>
+    </div>`;
+    return;
+  }
+  if(modo) modo.textContent='☁️ Nuvem';
+  if(tb) tb.style.display='flex';
+  bar.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#f0fbf3;border:1px solid #bfe6cb;border-radius:9px;padding:9px 13px;margin-bottom:14px;font-size:13px;flex-wrap:wrap;">
+    <span>👤 Logado: <b>${escapeHtml(usuarioAtual.email||'')}</b> · biblioteca compartilhada do escritório</span>
+    <button class="btn btn-ghost" style="padding:5px 11px;" onclick="fazerLogout()">Sair</button></div>`;
+}
+async function fazerLogin(){
+  const email=($('loginEmail').value||'').trim(), senha=$('loginSenha').value||'', msg=$('loginMsg'), btn=$('btnLogin');
+  if(!email||!senha){ if(msg) msg.textContent='Informe e-mail e senha.'; return; }
+  if(btn){ btn.disabled=true; btn.textContent='Entrando...'; }
+  try{
+    const { data, error } = await supa.auth.signInWithPassword({ email, password: senha });
+    if(error) throw error;
+    usuarioAtual = data.user; renderAuthBar(); await carregarEstudos();
+  }catch(e){ if(msg) msg.textContent='❌ '+(((e.message||'').indexOf('Invalid login')>=0)?'E-mail ou senha incorretos.':(e.message||'falha no login')); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='Entrar'; } }
+}
+async function fazerLogout(){
+  if(supa){ try{ await supa.auth.signOut(); }catch(e){} }
+  usuarioAtual=null; estudosCache=[]; renderAuthBar(); renderGaleria(); atualizarGaleriaCount();
+}
+async function carregarEstudos(){
+  if(modoNuvem()){
+    try{
+      const { data, error } = await supa.from('estudos').select('*').order('ts',{ascending:false});
+      if(error) throw error;
+      estudosCache=(data||[]).map(r=>({id:r.id,grupo:r.grupo,empresa:r.empresa,cnpj:r.cnpj,data:r.data,ts:r.ts,form:r.form,resumo:r.resumo}));
+    }catch(e){ estudosCache=[]; if($('galeriaConteudo')) $('galeriaConteudo').innerHTML='<div class="galeria-vazia">❌ Erro ao carregar da nuvem: '+escapeHtml(e.message||'')+'</div>'; atualizarGaleriaCount(); return; }
+  } else { estudosCache = lerEstudos(); }
+  atualizarGaleriaCount(); renderGaleria();
+}
 
 function coletarFormulario(){
   const rbt=[]; document.querySelectorAll('.rbtm').forEach(inp=> rbt[parseInt(inp.dataset.i,10)] = inp.value);
@@ -1352,13 +1428,12 @@ function aplicarFormulario(f){
   updRbt(); atividadeChange();
 }
 
-function salvarEstudo(){
+async function salvarEstudo(){
   if(!LAST){ alert('Calcule um estudo antes de salvar.'); return; }
+  if(supa && !usuarioAtual){ alert('Para salvar na biblioteca compartilhada, abra "📚 Estudos salvos" e faça login.'); abrirGaleria(); return; }
   const empPad = ($('empNome').value||'').trim() || 'Empresa sem nome';
   const grupo = ((prompt('Nome do GRUPO de clientes (ex.: Grupo ABC).\nDeixe em branco para "Sem grupo":','')||'').trim()) || 'Sem grupo';
-  const estudos = lerEstudos();
-  estudos.push({
-    id: 'e'+Date.now()+Math.floor(Math.random()*1000),
+  const reg = {
     grupo, empresa: empPad, cnpj: ($('empCnpj').value||'').trim()||'—',
     data: new Date().toLocaleString('pt-BR'), ts: Date.now(),
     form: coletarFormulario(),
@@ -1366,19 +1441,27 @@ function salvarEstudo(){
       melhor: LAST.melhor.nome, melhorTotal: LAST.melhor.total, receita: LAST.receita,
       totais: Object.fromEntries(LAST.regimes.map(r=>[r.key, r.total]))
     }
-  });
-  salvarEstudos(estudos); atualizarGaleriaCount();
-  alert('✅ Estudo salvo na biblioteca!\nGrupo: '+grupo+'\nEmpresa: '+empPad);
+  };
+  if(modoNuvem()){
+    try{ const { error } = await supa.from('estudos').insert(reg); if(error) throw error; await carregarEstudos();
+      alert('✅ Estudo salvo na NUVEM!\nGrupo: '+grupo+'\nEmpresa: '+empPad+'\nJá está visível em todos os PCs do escritório.'); }
+    catch(e){ alert('❌ Erro ao salvar na nuvem: '+(e.message||e)); }
+  } else {
+    reg.id='e'+Date.now()+Math.floor(Math.random()*1000);
+    const arr=lerEstudos(); arr.push(reg); salvarEstudos(arr); estudosCache=arr; atualizarGaleriaCount();
+    alert('✅ Estudo salvo (local, neste PC).\nGrupo: '+grupo+'\nEmpresa: '+empPad);
+  }
 }
 
-function abrirGaleria(){ renderGaleria(); $('galeriaModal').classList.add('open'); }
+async function abrirGaleria(){ $('galeriaModal').classList.add('open'); renderAuthBar(); await carregarEstudos(); }
 function fecharGaleria(){ $('galeriaModal').classList.remove('open'); }
 
 function renderGaleria(){
-  const estudos = lerEstudos();
-  const termo = ($('galeriaBusca').value||'').toLowerCase();
+  const cont = $('galeriaConteudo'); if(!cont) return;
+  if(supa && !usuarioAtual){ cont.innerHTML = '<div class="galeria-vazia">🔒 Faça login acima para ver a biblioteca compartilhada do escritório.</div>'; return; }
+  const estudos = estudosCache;
+  const termo = ($('galeriaBusca') ? $('galeriaBusca').value : '').toLowerCase();
   const filtrados = estudos.filter(e=> (e.grupo+' '+e.empresa+' '+(e.cnpj||'')).toLowerCase().includes(termo));
-  const cont = $('galeriaConteudo');
   if(!filtrados.length){
     cont.innerHTML = '<div class="galeria-vazia">'+(estudos.length
       ? 'Nenhum estudo encontrado para a busca.'
@@ -1409,37 +1492,48 @@ function renderGaleria(){
 }
 
 function abrirEstudo(id){
-  const e = lerEstudos().find(x=>x.id===id);
+  const e = estudosCache.find(x=>String(x.id)===String(id));
   if(!e){ alert('Estudo não encontrado.'); return; }
   aplicarFormulario(e.form);
   fecharGaleria();
   calcular();
 }
-function excluirEstudo(id){
-  const e = lerEstudos().find(x=>x.id===id);
+async function excluirEstudo(id){
+  const e = estudosCache.find(x=>String(x.id)===String(id));
   if(!e) return;
   if(!confirm('Excluir o estudo de "'+e.empresa+'" (grupo '+e.grupo+')?\nEsta ação não pode ser desfeita.')) return;
-  salvarEstudos(lerEstudos().filter(x=>x.id!==id));
-  atualizarGaleriaCount(); renderGaleria();
+  if(modoNuvem()){
+    try{ const { error } = await supa.from('estudos').delete().eq('id', id); if(error) throw error; await carregarEstudos(); }
+    catch(err){ alert('❌ Erro ao excluir na nuvem: '+(err.message||err)); }
+  } else {
+    const arr = lerEstudos().filter(x=>String(x.id)!==String(id));
+    salvarEstudos(arr); estudosCache=arr; atualizarGaleriaCount(); renderGaleria();
+  }
 }
 
 function exportBiblioteca(){
-  const arr = lerEstudos();
-  if(!arr.length){ alert('Não há estudos para exportar.'); return; }
-  download(JSON.stringify(arr,null,2), 'biblioteca_estudos_maximos.json', 'application/json');
+  if(!estudosCache.length){ alert('Não há estudos para exportar.'); return; }
+  download(JSON.stringify(estudosCache,null,2), 'biblioteca_estudos_maximos.json', 'application/json');
 }
-function importBiblioteca(input){
+async function importBiblioteca(input){
   const file = input.files[0]; if(!file) return;
   const reader = new FileReader();
-  reader.onload = ()=>{
+  reader.onload = async ()=>{
     try{
       const arr = JSON.parse(reader.result);
       if(!Array.isArray(arr)) throw new Error('fmt');
-      const atual = lerEstudos(); const ids = new Set(atual.map(e=>e.id)); let novos=0;
-      arr.forEach(e=>{ if(e && e.id && !ids.has(e.id)){ atual.push(e); ids.add(e.id); novos++; } });
-      salvarEstudos(atual); atualizarGaleriaCount(); renderGaleria();
-      alert('✅ Backup importado: '+novos+' estudo(s) novo(s) adicionado(s).');
-    }catch(err){ alert('❌ Arquivo inválido. Selecione um backup .json gerado por este sistema.'); }
+      if(modoNuvem()){
+        const novos = arr.map(e=>({grupo:e.grupo||'Sem grupo', empresa:e.empresa||'—', cnpj:e.cnpj||'—', data:e.data||new Date().toLocaleString('pt-BR'), ts:e.ts||Date.now(), form:e.form||{}, resumo:e.resumo||{}}));
+        const { error } = await supa.from('estudos').insert(novos); if(error) throw error;
+        await carregarEstudos();
+        alert('✅ Backup importado para a NUVEM: '+novos.length+' estudo(s).');
+      } else {
+        const atual = lerEstudos(); const ids = new Set(atual.map(e=>e.id)); let novos=0;
+        arr.forEach(e=>{ if(e && e.id && !ids.has(e.id)){ atual.push(e); ids.add(e.id); novos++; } });
+        salvarEstudos(atual); estudosCache=atual; atualizarGaleriaCount(); renderGaleria();
+        alert('✅ Backup importado (local): '+novos+' estudo(s).');
+      }
+    }catch(err){ alert('❌ Arquivo inválido ou erro: '+(err.message||err)); }
   };
   reader.readAsText(file); input.value='';
 }
@@ -1448,7 +1542,9 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') fecharGaleria(); 
 /* ===== init ===== */
 buildRbt();
 atividadeChange();
+estudosCache = supa ? [] : lerEstudos();   // sem nuvem: usa local; com nuvem: carrega após login
 atualizarGaleriaCount();
+initAuth();                                 // restaura sessão se já estiver logado
 const hoje = new Date().toLocaleDateString('pt-BR');
 $('hdrDate').textContent = hoje;
 $('footDate').textContent = hoje;
