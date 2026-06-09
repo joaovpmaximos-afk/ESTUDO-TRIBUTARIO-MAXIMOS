@@ -9,10 +9,11 @@
     --preto:#101418; --preto2:#1c2228; --verde:#27c24c; --verde2:#1ea33e;
     --cinza:#f4f6f8; --cinza2:#e6eaee; --borda:#d8dee5; --texto:#222a31;
     --muted:#69757f; --branco:#ffffff;
-    --simples:#3b82f6; --presumido:#f59e0b; --real:#8b5cf6; --best:#27c24c;
+    /* cores da marca: verde (vencedor) + tons de preto/cinza p/ os demais */
+    --simples:#1c2228; --presumido:#39414a; --real:#6b7681; --best:#27c24c;
   }
   *{box-sizing:border-box;}
-  body{margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--cinza);color:var(--texto);font-size:14px;}
+  body{margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:#ffffff;color:var(--texto);font-size:14px;}
   a{color:var(--verde2);}
   .wrap{max-width:1180px;margin:0 auto;padding:0 18px 60px;}
 
@@ -93,11 +94,11 @@
   .regime.best{border-color:var(--best);box-shadow:0 6px 22px rgba(39,194,76,.22);transform:translateY(-2px);}
   .best-badge{position:absolute;top:-1px;right:-1px;background:var(--best);color:#fff;font-size:10.5px;font-weight:700;padding:5px 12px;border-radius:0 12px 0 12px;letter-spacing:.5px;}
 
-  .verdict{margin-top:18px;background:linear-gradient(135deg,var(--preto),var(--preto2));color:#fff;border-radius:14px;padding:22px 24px;}
-  .verdict h3{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:9px;}
-  .verdict .big{font-size:15px;line-height:1.6;}
-  .verdict .saving{color:var(--verde);font-weight:800;}
-  .verdict .eco-tag{display:inline-block;background:var(--verde);color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-left:6px;}
+  .verdict{margin-top:18px;background:#fff;border:1px solid var(--borda);border-left:5px solid var(--verde);color:var(--texto);border-radius:12px;padding:20px 24px;}
+  .verdict h3{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:9px;color:var(--verde2);}
+  .verdict .big{font-size:15px;line-height:1.7;}
+  .verdict .saving{color:var(--verde2);font-weight:800;}
+  .verdict .eco-tag{display:inline-block;background:var(--verde);color:#fff;padding:3px 11px;border-radius:20px;font-size:13px;font-weight:700;margin-left:4px;}
 
   .disclaimer{font-size:11.5px;color:var(--muted);line-height:1.6;margin-top:8px;background:#fff8e6;border:1px solid #f3e2a8;border-radius:8px;padding:12px 14px;}
   footer{text-align:center;color:var(--muted);font-size:12px;padding:24px 0;}
@@ -142,10 +143,18 @@
   .dash-comp td:last-child{color:var(--verde2);font-weight:700;}
   .dash-comp tr.tot td{font-weight:800;background:var(--cinza);border-bottom:none;border-top:2px solid var(--borda);}
   .dash-comp tr.tot td:last-child{color:var(--preto);}
-  .dash-conc{margin-top:20px;background:#f0fbf3;border:1px solid #bfe6cb;border-radius:12px;padding:18px 20px;}
-  .dash-conc h3{color:var(--verde2);margin:0 0 10px;font-size:15px;}
-  .dash-conc ul{margin:0;padding-left:20px;line-height:1.7;font-size:13.5px;}
-  .dash-conc .destaque{font-weight:700;color:var(--preto);}
+  .dash-conc{margin-top:22px;background:#fff;border:1px solid var(--borda);border-left:5px solid var(--verde);border-radius:12px;padding:20px 22px;}
+  .dash-conc h3{color:var(--preto);margin:0 0 6px;font-size:16px;}
+  .dash-conc .lead{font-size:13.5px;line-height:1.65;color:#46525c;margin:0 0 16px;}
+  .dash-conc .destaque{font-weight:700;color:var(--verde2);}
+  .comp-vs{border:1px solid var(--cinza2);border-radius:10px;padding:13px 15px;margin-bottom:10px;background:#fcfdfe;}
+  .comp-vs .vs-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:5px;flex-wrap:wrap;}
+  .comp-vs .vs-title{font-weight:700;font-size:13.5px;color:var(--preto);}
+  .comp-vs .vs-eco{font-size:13px;font-weight:700;color:var(--verde2);white-space:nowrap;}
+  .comp-vs .vs-eco.neg{color:var(--muted);}
+  .comp-vs .vs-reason{font-size:12.5px;color:#46525c;line-height:1.55;}
+  .dash-conc ul.notas{margin:14px 0 0;padding-left:20px;line-height:1.7;font-size:13px;color:#46525c;}
+  .dash-conc ul.notas li{margin-bottom:4px;}
 </style>
 </head>
 <body>
@@ -797,8 +806,8 @@ function render(regimes, melhor, data){
 /* ============================================================
    DASHBOARD — gráficos + alíquota efetiva por tributo + conclusões
    ============================================================ */
-const CORES = { simples:'#3b82f6', presumido:'#f59e0b', real:'#8b5cf6' };
-const PALETA = ['#27c24c','#3b82f6','#f59e0b','#8b5cf6','#ef4444','#14b8a6','#ec4899'];
+const CORES = { simples:'#1c2228', presumido:'#39414a', real:'#6b7681' };   // tons de preto/cinza da marca
+const PALETA = ['#27c24c','#101418','#1ea33e','#6b7681','#39414a','#9aa5ad','#c8d0d6']; // verde + preto + cinzas
 
 // gráfico de rosca (donut) em SVG puro — composição de tributos
 function donutSVG(items, total){
@@ -860,28 +869,48 @@ function renderDashboard(regimes, melhor, data){
         </tbody></table></div>`;
   });
 
-  // 3) CONCLUSÕES — por que o melhor venceu
+  // 3) CONCLUSÕES — legenda explicando por que o melhor, em vez de cada outro regime
   const ordenado = [...regimes].sort((a,b)=>a.total-b.total);
-  const segundo = ordenado[1];
   const pior = ordenado[ordenado.length-1];
-  const difSeg = segundo.total - melhor.total;
-  const difSegPct = melhor.total>0 ? difSeg/melhor.total*100 : 0;
-  const concl = [];
-  concl.push(`O <span class="destaque">${melhor.nome}</span> apresenta a <span class="destaque">menor carga efetiva (${pct(melhor.efetiva)})</span> sobre o faturamento de ${fmt(receita)}, resultando em ${fmt(melhor.total)} no período.`);
-  concl.push(`Fica ${fmt(difSeg)} (${pct(difSegPct)}) ${difSeg>0?'abaixo':'no mesmo nível'} do 2º colocado (${segundo.nome}, ${pct(segundo.efetiva)}) e ${fmt(pior.total-melhor.total)} abaixo do mais caro (${pior.nome}, ${pct(pior.efetiva)}).`);
-  if(melhor.key==='simples'){
-    if(['servico_iii','servico_v'].includes(data.atividade)){
-      concl.push(data.fatorR>=0.28
-        ? `O <span class="destaque">Fator R de ${pct(data.fatorR*100)} (≥ 28%)</span> enquadrou no <span class="destaque">Anexo III</span>, com alíquotas menores — fator decisivo da economia.`
-        : `O <span class="destaque">Fator R de ${pct(data.fatorR*100)} (< 28%)</span> levou ao Anexo V. Aumentar a folha/pró-labore para ≥ 28% poderia migrar ao Anexo III e baratear ainda mais.`);
+  const margem = (data.nums && data.receita>0) ? data.nums.lucro/data.receita*100 : 0;
+
+  // motivo de o vencedor ser melhor que um regime perdedor específico
+  function motivoVs(loser){
+    if(loser.key==='simples'){
+      if(['servico_iii','servico_v'].includes(data.atividade) && data.fatorR<0.28)
+        return `No Simples, o Fator R de <b>${pct(data.fatorR*100)}</b> (&lt; 28%) joga a empresa no <b>Anexo V</b>, cuja alíquota efetiva (${pct(loser.efetiva)}) é alta para serviços. O ${melhor.nome} tributa de forma mais leve nesta faixa.`;
+      return `Nesta faixa de faturamento, a alíquota efetiva do Simples chega a <b>${pct(loser.efetiva)}</b> — acima da carga do ${melhor.nome} (${pct(melhor.efetiva)}).`;
     }
-    concl.push(`Vantagens práticas do Simples: <span class="destaque">guia única (DAS)</span>, menos obrigações acessórias e tributação sobre o faturamento (não sobre o lucro).`);
+    if(loser.key==='presumido'){
+      const lc = (data.nums && data.nums.aplicaLC224) ? ' (já com a majoração da LC 224/2025)' : '';
+      return `No Presumido, IRPJ e CSLL incidem sobre uma <b>presunção fixa de lucro</b>${lc}, levando a carga a <b>${pct(loser.efetiva)}</b> — acima do ${melhor.nome}.`;
+    }
+    return `No Real, IRPJ/CSLL incidem sobre o <b>lucro efetivo</b> (margem de ${pct(margem)}) e o PIS/COFINS somam 9,25%; o resultado é <b>${pct(loser.efetiva)}</b> de carga — acima do ${melhor.nome}.`;
+  }
+  const comparativos = ordenado.filter(r=>r.key!==melhor.key).map(o=>{
+    const eco = o.total - melhor.total;
+    const ecoPct = o.total>0 ? eco/o.total*100 : 0;
+    return `<div class="comp-vs">
+      <div class="vs-top">
+        <span class="vs-title">✅ ${melhor.nome} &nbsp;×&nbsp; ${o.nome}</span>
+        <span class="vs-eco ${eco<=0?'neg':''}">${eco>0?'economia de '+fmt(eco)+' ('+pct(ecoPct)+')':'mesma faixa'}</span>
+      </div>
+      <div class="vs-reason"><b>Por que não o ${o.nome}:</b> ${motivoVs(o)}</div>
+    </div>`;
+  }).join('');
+
+  // notas práticas conforme o vencedor
+  const notas = [];
+  if(melhor.key==='simples'){
+    notas.push('Guia única (DAS), menos obrigações acessórias e tributação sobre o faturamento — não sobre o lucro.');
+    if(['servico_iii','servico_v'].includes(data.atividade) && data.fatorR<0.28)
+      notas.push(`O Fator R está em ${pct(data.fatorR*100)}. Elevar a folha/pró-labore para ≥ 28% migraria ao Anexo III e baixaria ainda mais a carga.`);
   } else if(melhor.key==='presumido'){
-    concl.push(`O Lucro Presumido venceu porque a <span class="destaque">presunção de lucro</span> da atividade gera base tributável menor que o DAS do Simples nesta faixa de faturamento.`);
-    if(data.nums && data.nums.aplicaLC224) concl.push(`⚠️ Já está aplicada a <span class="destaque">majoração da LC 224/2025 (+10%)</span> por faturamento acima de R$ 5 mi/ano. Verifique se há liminar.`);
+    notas.push('Apuração mais simples que o Real; ideal quando a margem de lucro real é maior que a presunção da atividade.');
+    if(data.nums && data.nums.aplicaLC224) notas.push('⚠️ A majoração da LC 224/2025 (+10% na presunção) está aplicada por faturamento > R$ 5 mi/ano. Se houver liminar, marque a opção nos parâmetros.');
   } else {
-    concl.push(`O Lucro Real venceu porque a <span class="destaque">margem de lucro real</span> da empresa é baixa — como IRPJ/CSLL incidem sobre o lucro efetivo, paga-se menos do que sobre a presunção/faturamento.`);
-    concl.push(`Atenção: o Real exige <span class="destaque">escrituração completa</span> e os créditos de PIS/COFINS dependem de insumos elegíveis — valide com a contabilidade.`);
+    notas.push('Indicado para margem de lucro baixa. Exige escrituração contábil completa.');
+    notas.push('Os créditos de PIS/COFINS dependem de insumos elegíveis — confirme a base de crédito com a contabilidade.');
   }
 
   const donut = donutSVG(melhor.comp||[], melhor.total);
@@ -901,8 +930,10 @@ function renderDashboard(regimes, melhor, data){
       <div class="hint" style="margin-top:10px;"><b>Alíquota Efetiva (%) = (Valor do Imposto ÷ Base de Cálculo) × 100.</b> A última linha traz a <b>Alíquota Efetiva Total do regime</b> = total de tributos ÷ receita bruta — é o número usado para comparar qual regime tem a menor carga.</div>
     </div>
     <div class="dash-conc">
-      <h3>🎯 Por que o ${melhor.nome} é o melhor cenário</h3>
-      <ul>${concl.map(c=>`<li>${c}</li>`).join('')}</ul>
+      <h3>🎯 Conclusão — por que o ${melhor.nome} é a melhor escolha</h3>
+      <p class="lead">Para a receita de <b>${fmt(receita)}</b>, o <span class="destaque">${melhor.nome}</span> tem a <span class="destaque">menor alíquota efetiva total (${pct(melhor.efetiva)})</span>, resultando em <b>${fmt(melhor.total)}</b> de tributos. Abaixo, o motivo de escolhê-lo em vez de cada alternativa:</p>
+      ${comparativos}
+      <ul class="notas">${notas.map(n=>`<li>${n}</li>`).join('')}</ul>
     </div>`;
 }
 
