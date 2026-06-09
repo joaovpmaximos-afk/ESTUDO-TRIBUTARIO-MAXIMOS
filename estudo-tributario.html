@@ -91,6 +91,16 @@
   .regime .brk{list-style:none;padding:0;margin:0;border-top:1px solid var(--cinza2);}
   .regime .brk li{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--cinza2);}
   .regime .brk li span:last-child{font-weight:600;}
+  .regime .rnota{font-size:11px;color:var(--muted);background:var(--cinza);border-radius:7px;padding:6px 9px;margin-bottom:10px;line-height:1.4;}
+  .brk-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .brk-table th{font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);font-weight:600;padding:5px 0;text-align:right;border-bottom:1px solid var(--borda);}
+  .brk-table th:first-child{text-align:left;}
+  .brk-table td{padding:6px 0;border-bottom:1px solid var(--cinza2);text-align:right;}
+  .brk-table td:first-child{text-align:left;color:#46525c;}
+  .brk-table td:last-child{font-weight:700;color:var(--verde2);width:74px;}
+  .brk-table td:nth-child(2){font-weight:600;}
+  .brk-table tr.tot td{border-bottom:none;border-top:2px solid var(--borda);font-weight:800;padding-top:8px;}
+  .brk-table tr.tot td:last-child{color:var(--preto);}
   .regime.best{border-color:var(--best);box-shadow:0 6px 22px rgba(39,194,76,.22);transform:translateY(-2px);}
   .best-badge{position:absolute;top:-1px;right:-1px;background:var(--best);color:#fff;font-size:10.5px;font-weight:700;padding:5px 12px;border-radius:0 12px 0 12px;letter-spacing:.5px;}
 
@@ -650,6 +660,7 @@ function engine(inp){
       ['DAS (guia única)', fmt(simplesTotal)]
     ],
     excede: fx.excede||false,
+    nota:`Faixa ${fx.idx+1}ª · alíq. nominal ${pct(fx.aliq*100)} · parcela a deduzir ${fmt(fx.pd)}`,
     comp:[ {label:'DAS (Simples Nacional)', valor:simplesTotal, base:receita, nominal:fx.aliq*100} ]
   };
 
@@ -779,13 +790,23 @@ function render(regimes, melhor, data){
   let html='';
   regimes.forEach(r=>{
     const isBest = r.key===melhor.key;
+    const linhasComp = (r.comp||[]).map(c=>{
+      const ef = c.base>0 ? pct(c.valor/c.base*100) : '—';
+      return `<tr><td>${c.label}</td><td>${fmt(c.valor)}</td><td>${ef}</td></tr>`;
+    }).join('');
     html += `<div class="regime ${r.cls} ${isBest?'best':''}">
       ${isBest?'<span class="best-badge">★ MELHOR CENÁRIO</span>':''}
       <div class="rhead"><h3>${r.nome}</h3><div class="anexo">${r.anexoLabel}</div></div>
       <div class="rbody">
         <div class="total-tax">${fmt(r.total)}</div>
-        <div class="eff">Carga efetiva sobre receita: <b>${pct(r.efetiva)}</b>${r.excede?' · ⚠️ acima do teto do Simples (R$ 4,8 mi)':''}</div>
-        <ul class="brk">${r.breakdown.map(b=>`<li><span>${b[0]}</span><span>${b[1]}</span></li>`).join('')}</ul>
+        <div class="eff">Alíquota efetiva total: <b>${pct(r.efetiva)}</b>${r.excede?' · ⚠️ acima do teto do Simples (R$ 4,8 mi)':''}</div>
+        ${r.nota?`<div class="rnota">${r.nota}</div>`:''}
+        <table class="brk-table">
+          <thead><tr><th>Tributo</th><th>Valor</th><th>Alíq. Efetiva</th></tr></thead>
+          <tbody>${linhasComp}
+            <tr class="tot"><td>Total</td><td>${fmt(r.total)}</td><td>${pct(r.efetiva)}</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>`;
   });
@@ -975,15 +996,19 @@ function exportRows(){
     ['Fator R', pct(d.fatorR*100)],
     ['Data', new Date().toLocaleDateString('pt-BR')],
     [],
-    ['REGIME','DETALHE','VALOR']
+    ['TRIBUTO','BASE DE CÁLCULO','ALÍQ. NOMINAL','VALOR DO IMPOSTO','ALÍQ. EFETIVA']
   ];
   d.regimes.forEach(r=>{
-    rows.push([r.nome.toUpperCase(), r.anexoLabel, '']);
-    r.breakdown.forEach(b=> rows.push(['', b[0], b[1]]));
-    rows.push(['', 'CARGA EFETIVA', pct(r.efetiva)]);
+    rows.push([r.nome.toUpperCase()+' — '+r.anexoLabel,'','','','']);
+    (r.comp||[]).forEach(c=>{
+      const ef  = c.base>0 ? pct(c.valor/c.base*100) : '—';
+      const nom = (c.nominal!=null && c.nominal>0) ? pct(c.nominal) : '—';
+      rows.push([c.label, fmt(c.base), nom, fmt(c.valor), ef]);
+    });
+    rows.push(['TOTAL DA CARGA', fmt(d.receita)+' (receita)', '—', fmt(r.total), pct(r.efetiva)]);
     rows.push([]);
   });
-  rows.push(['MELHOR CENÁRIO', d.melhor.nome, fmt(d.melhor.total)]);
+  rows.push(['MELHOR CENÁRIO', d.melhor.nome, '', fmt(d.melhor.total), pct(d.melhor.efetiva)]);
   return rows;
 }
 
@@ -994,7 +1019,7 @@ function exportExcel(){
     download('﻿'+csv, nomeArq('csv'), 'text/csv'); return;
   }
   const ws = XLSX.utils.aoa_to_sheet(exportRows());
-  ws['!cols']=[{wch:24},{wch:40},{wch:20}];
+  ws['!cols']=[{wch:34},{wch:22},{wch:14},{wch:20},{wch:14}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Estudo Tributário');
   XLSX.writeFile(wb, nomeArq('xlsx'));
@@ -1036,14 +1061,23 @@ function exportPDF(){
   doc.setTextColor(255,255,255); doc.setFontSize(10); doc.setFont(undefined,'normal');
   doc.text('Carga estimada: '+fmt(d.melhor.total)+' no período.', 20, y2+16);
 
-  // detalhamento por regime
+  // detalhamento por regime — Base, Alíq. Nominal, Valor e Alíq. Efetiva por tributo
   d.regimes.forEach(r=>{
+    const body = (r.comp||[]).map(c=>{
+      const ef  = c.base>0 ? pct(c.valor/c.base*100) : '—';
+      const nom = (c.nominal!=null && c.nominal>0) ? pct(c.nominal) : '—';
+      return [c.label, fmt(c.base), nom, fmt(c.valor), ef];
+    });
+    body.push(['TOTAL DA CARGA', fmt(d.receita)+' (receita)', '—', fmt(r.total), pct(r.efetiva)]);
     doc.autoTable({
-      startY: doc.lastAutoTable.finalY + (doc.lastAutoTable.finalY>250?0:8),
-      head:[[r.nome.toUpperCase(), '']],
-      body: r.breakdown,
-      theme:'striped', headStyles:{fillColor:[60,70,80]},
-      columnStyles:{1:{halign:'right'}}, margin:{top:30}
+      startY: doc.lastAutoTable.finalY + (doc.lastAutoTable.finalY>248?0:8),
+      head:[[{content:r.nome.toUpperCase()+' — alíquota efetiva total '+pct(r.efetiva), colSpan:5}],
+            ['Tributo','Base de Cálculo','Alíq. Nominal','Valor','Alíq. Efetiva']],
+      body,
+      theme:'striped', headStyles:{fillColor:[28,34,40]},
+      columnStyles:{1:{halign:'right'},2:{halign:'right'},3:{halign:'right'},4:{halign:'right',fontStyle:'bold',textColor:[30,120,40]}},
+      margin:{top:30},
+      didParseCell:(h)=>{ if(h.section==='body' && h.row.raw[0]==='TOTAL DA CARGA'){ h.cell.styles.fontStyle='bold'; h.cell.styles.fillColor=[240,244,246]; } }
     });
   });
 
