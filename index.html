@@ -522,7 +522,7 @@ function cnaeParaAtividade(cnae){
 
   // Comércio / Indústria / Transporte
   if(div>=45 && div<=47) return R('comercio','Anexo I — Comércio');
-  if(div>=5 && div<=33)  return R('industria','Anexo II — Indústria');
+  if(div>=5 && div<=32)  return R('industria','Anexo II — Indústria');   // 33 (reparação/instalação) é serviço → §5º-B, tratado abaixo
   if(div===49) return grupo==='493' ? R('transporte_carga','Anexo III — Transporte de cargas')
                                      : R('transporte_pass','Anexo III — Transporte de passageiros','media');
   if(div>=50 && div<=53) return R('transporte_carga','Anexo III — Transporte/Logística','media');
@@ -534,22 +534,23 @@ function cnaeParaAtividade(cnae){
   if(grupo==='812') return R('servico_iv','Anexo IV — Limpeza/Conservação');
   if(d==='8130300') return R('servico_iv','Anexo IV — Paisagismo');
 
-  // Anexo III FIXO (§5º-B, não depende de Fator R)
-  if(grupo==='692') return R('servico_iii_fixo','Anexo III — Escritório de contabilidade');
-  if(div===85) return R('servico_iii_fixo','Anexo III — Ensino/Educação');
-  if(grupo==='791') return R('servico_iii_fixo','Anexo III — Agência de viagens');
-  if(grupo==='931') return R('servico_iii_fixo','Anexo III — Academia/Atividade física');
-  if(div===95) return R('servico_iii_fixo','Anexo III — Reparação/Manutenção');
+  // Anexo III FIXO (§5º-B, NÃO depende de Fator R)
+  if(grupo==='692') return R('servico_iii_fixo','Anexo III fixo (§5º-B) — Escritório de contabilidade');
+  if(div===85) return R('servico_iii_fixo','Anexo III fixo (§5º-B) — Ensino/Educação');
+  if(d==='8559600'||grupo==='855') return R('servico_iii_fixo','Anexo III fixo (§5º-B) — Ensino/Cursos','media');
+  if(grupo==='791') return R('servico_iii_fixo','Anexo III fixo (§5º-B) — Agência de viagens');
+  if(div===95 || div===33) return R('servico_iii_fixo','Anexo III fixo (§5º-B) — Reparação/Manutenção/Instalação');
 
-  // Anexo III ou V por Fator R (§5º-D, serviços intelectuais/técnicos)
-  if(div===62 || div===63) return R('servico_iii','Anexo III/V (Fator R) — TI/Software');
-  if(grupo==='711' || grupo==='712') return R('servico_iii','Anexo III/V (Fator R) — Engenharia/Arquitetura');
-  if(div===73) return R('servico_iii','Anexo III/V (Fator R) — Publicidade/Pesquisa');
-  if(div===69 || div===70) return R('servico_iii','Anexo III/V (Fator R) — Jurídico/Consultoria/Gestão');
-  if(div===74) return R('servico_iii','Anexo III/V (Fator R) — Design/Técnico/Fotografia');
-  if(div===75) return R('servico_iii','Anexo III/V (Fator R) — Veterinária');
-  if(div===86) return R('servico_iii','Anexo III/V (Fator R) — Saúde','media');
-  if(div===68) return R('servico_iii','Anexo III/V (Fator R) — Adm./Locação de imóveis');
+  // Anexo III ou V por Fator R (§5º-D e §5º-I — serviços intelectuais/técnicos)
+  if(grupo==='931') return R('servico_iii','Anexo III/V (Fator R, §5º-D) — Academia/Atividade física');
+  if(div===62 || div===63) return R('servico_iii','Anexo III/V (Fator R, §5º-D) — TI/Software');
+  if(grupo==='711' || grupo==='712') return R('servico_iii','Anexo III/V (Fator R, §5º-I) — Engenharia/Arquitetura');
+  if(div===73) return R('servico_iii','Anexo III/V (Fator R, §5º-I) — Publicidade/Pesquisa');
+  if(div===69 || div===70) return R('servico_iii','Anexo III/V (Fator R, §5º-I) — Jurídico/Consultoria/Gestão');
+  if(div===74) return R('servico_iii','Anexo III/V (Fator R, §5º-I) — Design/Técnico/Fotografia');
+  if(div===75) return R('servico_iii','Anexo III/V (Fator R, §5º-I) — Veterinária');
+  if(div===86) return R('servico_iii','Anexo III/V (Fator R) — Saúde/Medicina','media');
+  if(div===68) return R('servico_iii','Anexo III/V (Fator R, §5º-D) — Adm./Locação de imóveis');
 
   // default: serviço Fator R — baixa confiança, confirmar
   return R('servico_iii','Serviço — Anexo III ou V (Fator R) · CONFIRME','baixa');
