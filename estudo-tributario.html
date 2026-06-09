@@ -132,15 +132,16 @@
   .dash-bar-fill{height:100%;border-radius:7px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;color:#fff;font-size:12px;font-weight:700;min-width:42px;transition:width .5s;white-space:nowrap;}
   .dash-bar-val{width:170px;flex:none;font-size:12.5px;text-align:left;}
   .dash-bar-val b{font-size:14px;}
-  .dash-tables{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-  @media(max-width:820px){.dash-tables{grid-template-columns:1fr;}}
+  .dash-tables{display:flex;flex-direction:column;gap:16px;}
   .dash-comp{border:1px solid var(--borda);border-radius:11px;overflow:hidden;}
-  .dash-comp-head{padding:9px 13px;color:#fff;font-weight:700;font-size:13px;}
+  .dash-comp-head{padding:10px 14px;color:#fff;font-weight:700;font-size:13.5px;}
   .dash-comp table{width:100%;border-collapse:collapse;font-size:12.5px;}
-  .dash-comp td{padding:6px 13px;border-bottom:1px solid var(--cinza2);}
-  .dash-comp td:nth-child(2){text-align:right;font-weight:600;}
-  .dash-comp td:nth-child(3){text-align:right;color:var(--muted);width:62px;}
-  .dash-comp tr:last-child td{border-bottom:none;font-weight:700;background:var(--cinza);}
+  .dash-comp th{background:var(--cinza);font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;color:#46525c;padding:8px 13px;text-align:right;border-bottom:1px solid var(--borda);white-space:nowrap;}
+  .dash-comp td{padding:7px 13px;border-bottom:1px solid var(--cinza2);text-align:right;}
+  .dash-comp th:first-child,.dash-comp td:first-child{text-align:left;font-weight:600;}
+  .dash-comp td:last-child{color:var(--verde2);font-weight:700;}
+  .dash-comp tr.tot td{font-weight:800;background:var(--cinza);border-bottom:none;border-top:2px solid var(--borda);}
+  .dash-comp tr.tot td:last-child{color:var(--preto);}
   .dash-conc{margin-top:20px;background:#f0fbf3;border:1px solid #bfe6cb;border-radius:12px;padding:18px 20px;}
   .dash-conc h3{color:var(--verde2);margin:0 0 10px;font-size:15px;}
   .dash-conc ul{margin:0;padding-left:20px;line-height:1.7;font-size:13.5px;}
@@ -632,7 +633,7 @@ function engine(inp){
       ['DAS (guia única)', fmt(simplesTotal)]
     ],
     excede: fx.excede||false,
-    comp:[ {label:'DAS (guia única)', valor:simplesTotal, base:receita} ]
+    comp:[ {label:'DAS (Simples Nacional)', valor:simplesTotal, base:receita, nominal:fx.aliq*100} ]
   };
 
   /* ---------- 2) LUCRO PRESUMIDO ---------- */
@@ -678,13 +679,13 @@ function engine(inp){
       ['Total tributos', fmt(presumidoTotal)]
     ],
     comp:[
-      {label:'IRPJ', valor:irpj_p, base:baseIRPJ_p},
-      {label:'CSLL', valor:csll_p, base:baseCSLL_p},
-      {label:'PIS', valor:pis_p, base:receita},
-      {label:'COFINS', valor:cofins_p, base:receita},
-      ...(iss_p>0?[{label:'ISS', valor:iss_p, base:receita}]:[]),
-      ...(icms_p>0?[{label:'ICMS', valor:icms_p, base:receita}]:[]),
-      ...(ipi_p>0?[{label:'IPI', valor:ipi_p, base:receita}]:[])
+      {label:'IRPJ', valor:irpj_p, base:baseIRPJ_p, nominal:15},
+      {label:'CSLL', valor:csll_p, base:baseCSLL_p, nominal:9},
+      {label:'PIS', valor:pis_p, base:receita, nominal:0.65},
+      {label:'COFINS', valor:cofins_p, base:receita, nominal:3},
+      ...(iss_p>0?[{label:'ISS', valor:iss_p, base:receita, nominal:aliqIss*100}]:[]),
+      ...(icms_p>0?[{label:'ICMS', valor:icms_p, base:Math.max(0,receita-custos*pctCredIcms), nominal:aliqIcms*100}]:[]),
+      ...(ipi_p>0?[{label:'IPI', valor:ipi_p, base:receita, nominal:aliqIpi*100}]:[])
     ]
   };
 
@@ -716,13 +717,13 @@ function engine(inp){
       ['Total tributos', fmt(realTotal)]
     ],
     comp:[
-      {label:'IRPJ', valor:irpj_r, base:lucro},
-      {label:'CSLL', valor:csll_r, base:lucro},
-      {label:'PIS', valor:pis_r, base:Math.max(0,receita-baseCred)},
-      {label:'COFINS', valor:cofins_r, base:Math.max(0,receita-baseCred)},
-      ...(iss_r>0?[{label:'ISS', valor:iss_r, base:receita}]:[]),
-      ...(icms_r>0?[{label:'ICMS', valor:icms_r, base:receita}]:[]),
-      ...(ipi_r>0?[{label:'IPI', valor:ipi_r, base:receita}]:[])
+      {label:'IRPJ', valor:irpj_r, base:lucro, nominal:15},
+      {label:'CSLL', valor:csll_r, base:lucro, nominal:9},
+      {label:'PIS', valor:pis_r, base:Math.max(0,receita-baseCred), nominal:1.65},
+      {label:'COFINS', valor:cofins_r, base:Math.max(0,receita-baseCred), nominal:7.6},
+      ...(iss_r>0?[{label:'ISS', valor:iss_r, base:receita, nominal:aliqIss*100}]:[]),
+      ...(icms_r>0?[{label:'ICMS', valor:icms_r, base:Math.max(0,receita-custos*pctCredIcms), nominal:aliqIcms*100}]:[]),
+      ...(ipi_r>0?[{label:'IPI', valor:ipi_r, base:receita, nominal:aliqIpi*100}]:[])
     ]
   };
 
@@ -813,19 +814,28 @@ function renderDashboard(regimes, melhor, data){
     </div>`;
   });
 
-  // 2) COMPOSIÇÃO POR REGIME — alíquota efetiva por tributo (imposto ÷ base)
+  // 2) COMPOSIÇÃO POR REGIME — Base · Alíq. Nominal · Valor · Alíq. Efetiva (imposto ÷ base)
   let tabelas = '';
   regimes.forEach(r=>{
+    const best = r.key===melhor.key;
     const linhas = (r.comp||[]).map(c=>{
-      const efBase = c.base>0 ? (c.valor/c.base*100) : 0;       // alíquota efetiva sobre a BASE do tributo
-      const efRec  = receita>0 ? (c.valor/receita*100) : 0;     // peso sobre o faturamento
-      return `<tr><td>${c.label} <span style="color:#9aa5ad">(${pct(efBase)} s/ base)</span></td><td>${fmt(c.valor)}</td><td>${pct(efRec)}</td></tr>`;
+      const efetiva = c.base>0 ? (c.valor/c.base*100) : 0;       // alíquota efetiva = valor ÷ base × 100
+      const nominal = (c.nominal!=null && c.nominal>0) ? pct(c.nominal) : '—';
+      return `<tr>
+        <td>${c.label}</td>
+        <td>${fmt(c.base)}</td>
+        <td>${nominal}</td>
+        <td>${fmt(c.valor)}</td>
+        <td>${pct(efetiva)}</td>
+      </tr>`;
     }).join('');
     tabelas += `<div class="dash-comp">
-      <div class="dash-comp-head" style="background:${r.key===melhor.key?'var(--best)':CORES[r.key]}">${r.nome}</div>
-      <table><tbody>${linhas}
-        <tr><td>TOTAL · carga efetiva</td><td>${fmt(r.total)}</td><td>${pct(r.efetiva)}</td></tr>
-      </tbody></table></div>`;
+      <div class="dash-comp-head" style="background:${best?'var(--best)':CORES[r.key]}">${r.nome}${best?' 🏆':''} — alíquota efetiva total: ${pct(r.efetiva)}</div>
+      <table>
+        <thead><tr><th>Tributo</th><th>Base de Cálculo</th><th>Alíq. Nominal</th><th>Valor do Imposto</th><th>Alíq. Efetiva</th></tr></thead>
+        <tbody>${linhas}
+          <tr class="tot"><td>TOTAL DA CARGA</td><td>${fmt(receita)} <span style="font-weight:400;color:#9aa5ad">(receita)</span></td><td>—</td><td>${fmt(r.total)}</td><td>${pct(r.efetiva)}</td></tr>
+        </tbody></table></div>`;
   });
 
   // 3) CONCLUSÕES — por que o melhor venceu
@@ -858,9 +868,9 @@ function renderDashboard(regimes, melhor, data){
       ${barras}
     </div>
     <div class="dash-sec">
-      <h3>🧾 Composição e alíquota efetiva por tributo</h3>
+      <h3>🧾 Composição por tributo — Base, Valor, Alíquota Nominal e Efetiva</h3>
       <div class="dash-tables">${tabelas}</div>
-      <div class="hint" style="margin-top:8px;">Alíquota efetiva = valor do tributo ÷ base de cálculo. "% s/ base" = sobre a base do próprio tributo; última coluna = peso sobre o faturamento.</div>
+      <div class="hint" style="margin-top:10px;"><b>Alíquota Efetiva (%) = (Valor do Imposto ÷ Base de Cálculo) × 100.</b> A última linha traz a <b>Alíquota Efetiva Total do regime</b> = total de tributos ÷ receita bruta — é o número usado para comparar qual regime tem a menor carga.</div>
     </div>
     <div class="dash-conc">
       <h3>🎯 Por que o ${melhor.nome} é o melhor cenário</h3>
