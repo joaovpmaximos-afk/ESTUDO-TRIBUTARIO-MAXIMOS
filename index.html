@@ -986,33 +986,41 @@ function exportPDF(){
 function exportHTML(){
   if(!LAST){ alert('Calcule o estudo primeiro.'); return; }
   const d = LAST;
-  const regimeCards = d.regimes.map(r=>{
-    const best = r.key===d.melhor.key;
-    return `<div style="border:2px solid ${best?'#27c24c':'#d8dee5'};border-radius:12px;padding:16px;${best?'box-shadow:0 6px 22px rgba(39,194,76,.2)':''}">
-      <h3 style="margin:0 0 4px;color:#101418">${r.nome} ${best?'<span style="background:#27c24c;color:#fff;font-size:11px;padding:2px 8px;border-radius:12px">★ MELHOR</span>':''}</h3>
-      <div style="font-size:12px;color:#69757f;margin-bottom:8px">${r.anexoLabel}</div>
-      <div style="font-size:24px;font-weight:800;color:#101418">${fmt(r.total)}</div>
-      <div style="font-size:12px;color:#69757f;margin-bottom:10px">Carga efetiva: <b>${pct(r.efetiva)}</b></div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        ${r.breakdown.map(b=>`<tr><td style="padding:5px 0;border-bottom:1px solid #eee">${b[0]}</td><td style="padding:5px 0;border-bottom:1px solid #eee;text-align:right;font-weight:600">${b[1]}</td></tr>`).join('')}
-      </table></div>`;
-  }).join('');
+  const hoje = new Date().toLocaleString('pt-BR');
+  // captura o resultado renderizado (gráficos, tabelas e conclusões) + CSS completo
+  const css     = document.querySelector('style') ? document.querySelector('style').textContent : '';
+  const header  = document.querySelector('header') ? document.querySelector('header').outerHTML : '';
+  const grid    = $('resultsGrid').innerHTML;
+  const verdict = $('verdict').innerHTML;
+  const dash    = $('dashboard').innerHTML;
 
-  const doc = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Estudo Tributário — ${d.empresa.nome}</title></head>
-  <body style="font-family:Segoe UI,Arial,sans-serif;background:#f4f6f8;color:#222a31;margin:0;padding:0">
-  <div style="background:#101418;color:#fff;padding:20px 30px"><span style="color:#27c24c;font-size:26px;font-weight:800">MAXIMOS</span>
-  <span style="font-size:10px;letter-spacing:4px;color:#b9c2cb;display:block">SOLUÇÕES EMPRESARIAIS</span></div>
-  <div style="max-width:1000px;margin:0 auto;padding:24px">
-  <h1 style="font-size:20px">Estudo Tributário Comparativo</h1>
-  <p><b>Empresa:</b> ${d.empresa.nome} &nbsp;|&nbsp; <b>CNPJ:</b> ${d.empresa.cnpj} &nbsp;|&nbsp; <b>Atividade:</b> ${d.empresa.atividade}<br>
-  <b>Receita base (RBT12):</b> ${fmt(d.receita)} &nbsp;|&nbsp; <b>Período:</b> ${d.meses} meses &nbsp;|&nbsp; <b>Fator R:</b> ${pct(d.fatorR*100)}</p>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0">${regimeCards}</div>
-  <div style="background:#101418;color:#fff;border-radius:12px;padding:20px">
-    <h3 style="margin:0 0 6px;color:#27c24c">✅ Recomendação MAXIMOS</h3>
-    O regime mais econômico é o <b style="color:#27c24c">${d.melhor.nome}</b>, com carga estimada de <b>${fmt(d.melhor.total)}</b>.
+  const doc = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Estudo Tributário — ${d.empresa.nome}</title>
+<style>${css}
+/* documento exportado (estático) */
+.actions,.modal-bg{display:none!important;}
+header .meta{display:block;}
+</style></head>
+<body>
+${header}
+<div class="wrap">
+  <h1 class="title" style="margin-top:24px;">Estudo Tributário — ${d.empresa.nome}</h1>
+  <p class="subtitle">Documento gerado em ${hoje}</p>
+  <div class="card">
+    <div style="font-size:13px;color:#46525c;margin-bottom:16px;line-height:1.8;background:var(--cinza);border-radius:9px;padding:12px 15px;">
+      <b>Empresa:</b> ${d.empresa.nome} &nbsp;·&nbsp; <b>CNPJ:</b> ${d.empresa.cnpj} &nbsp;·&nbsp; <b>Atividade:</b> ${d.empresa.atividade}<br>
+      <b>Receita base (RBT12):</b> ${fmt(d.receita)} &nbsp;·&nbsp; <b>Período:</b> ${d.meses} ${d.meses>1?'meses':'mês'} &nbsp;·&nbsp; <b>Fator R:</b> ${pct(d.fatorR*100)}
+    </div>
+    <h2><span class="ico">📈</span> Resultado comparativo</h2>
+    <div class="results-grid">${grid}</div>
+    <div class="verdict">${verdict}</div>
+    <div id="dashboard">${dash}</div>
+    <div class="disclaimer">⚠️ <b>Aviso:</b> simulação baseada na LC 123/2006, regras de Lucro Presumido/Real e LC 224/2025, conforme os parâmetros informados. Não substitui análise contábil. Situações específicas (ST, monofásico, ISS retido, incentivos) podem alterar o resultado. Gerado em ${hoje}.</div>
   </div>
-  <p style="font-size:11px;color:#69757f;margin-top:16px">Simulação baseada na LC 123/2006 e nos parâmetros informados. Não substitui análise contábil. Gerado em ${new Date().toLocaleString('pt-BR')}.</p>
-  </div></body></html>`;
+</div>
+<footer style="text-align:center;color:#69757f;font-size:12px;padding:24px 0">MAXIMOS Soluções Empresariais · Estudo Tributário · ${hoje}</footer>
+</body></html>`;
   download(doc, nomeArq('html'), 'text/html');
 }
 
