@@ -139,12 +139,15 @@
   .dash-sec h3{font-size:14px;font-weight:700;margin:0 0 12px;color:var(--preto);}
   .dash-donut{display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
   .dash-donut svg{width:148px;height:148px;flex:none;display:block;}
-  .dash-donut .leg{flex:1;min-width:230px;}
+  .dash-donut .leg{flex:1;min-width:280px;}
   .dash-donut .leg-row{display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:6px;}
   .dash-donut .leg-row .sw{width:12px;height:12px;border-radius:3px;flex:none;}
   .dash-donut .leg-row .nm{flex:1;}
-  .dash-donut .leg-row .vl{font-weight:700;}
+  .dash-donut .leg-row .ef{width:58px;text-align:right;color:var(--verde2);font-weight:700;}
+  .dash-donut .leg-row .vl{font-weight:700;width:108px;text-align:right;}
   .dash-donut .leg-row .pc{color:#9aa5ad;width:52px;text-align:right;}
+  .dash-donut .leg-head{font-size:10px;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);border-bottom:1px solid var(--borda);padding-bottom:5px;margin-bottom:7px;}
+  .dash-donut .leg-head .ef,.dash-donut .leg-head .vl{color:var(--muted);font-weight:600;}
   .dash-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:11px;}
   .dash-bar-lbl{width:140px;font-size:12.5px;font-weight:600;flex:none;text-align:right;}
   .dash-bar-track{flex:1;background:var(--cinza2);border-radius:7px;height:30px;position:relative;overflow:hidden;}
@@ -316,19 +319,23 @@
       <div><label>FGTS anual <span class="q">(p/ Fator R)</span></label><input class="money" id="fgts" placeholder="0,00"></div>
     </div>
 
-    <div class="grid g3" style="margin-top:14px;">
-      <div><label>Custos / CMV / insumos anual <span class="q">(c/ crédito)</span></label><input class="money" id="custos" placeholder="0,00"></div>
+    <div class="grid g4" style="margin-top:14px;">
+      <div><label>Custos / CMV anual</label><input class="money" id="custos" placeholder="0,00"></div>
       <div><label>Despesas operacionais anual</label><input class="money" id="despesas" placeholder="0,00"></div>
-      <div><label>Lucro líquido antes de IR/CSLL <span class="q">(Lucro Real)</span></label><input class="money" id="lucroReal" placeholder="auto: receita − custos − despesas"></div>
+      <div><label>Insumos c/ crédito PIS/COFINS <span class="q">(Real)</span></label><input class="money" id="insumosCredPC" placeholder="padrão: usa os Custos"></div>
+      <div><label>Lucro líquido antes de IR/CSLL <span class="q">(Real)</span></label><input class="money" id="lucroReal" placeholder="auto: rec − custos − desp"></div>
     </div>
 
     <div class="grid g4" style="margin-top:14px;">
       <div><label>Alíquota ICMS média (%) <span class="q">(comércio/ind.)</span></label><input id="aliqIcms" placeholder="0"></div>
       <div><label>Alíquota ISS (%) <span class="q">(serviços)</span></label><input id="aliqIss" placeholder="0"></div>
       <div><label>Alíquota IPI (%) <span class="q">(indústria)</span></label><input id="aliqIpi" placeholder="0"></div>
-      <div><label>% das compras com crédito ICMS</label><input id="pctCredIcms" placeholder="0" value="0"></div>
+      <div><label>% das compras com <u>direito a crédito</u> de ICMS</label><input id="pctCredIcms" placeholder="0" value="0"></div>
     </div>
-    <p class="hint" style="margin-top:12px;">ICMS estimado pelo valor agregado: (Receita − Compras c/ crédito) × alíquota. PIS/COFINS no Lucro Real consideram crédito sobre custos. Tudo é estimativa — valide com a escrituração.</p>
+    <p class="hint" style="margin-top:12px;">
+      • <b>ICMS</b> estimado pelo valor agregado: (Receita − Compras com direito a crédito) × alíquota. O campo "% das compras com direito a crédito" é o <b>volume</b> de compras que vêm com ICMS destacado (ex.: 80 = 80% das compras dão crédito) — <b>não</b> é desconto de preço.<br>
+      • <b>PIS/COFINS no Lucro Real</b>: o crédito incide só sobre <b>insumos elegíveis</b> (matéria-prima/mercadoria), informados no campo "Insumos c/ crédito". Mão de obra, aluguel e energia <b>não</b> geram crédito. Se deixar vazio, o sistema usa os Custos como aproximação — confira com a escrituração.
+    </p>
 
     <div style="margin-top:14px;padding:12px 14px;background:#fff8e6;border:1px solid #f3e2a8;border-radius:8px;">
       <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-weight:500;color:#46525c;">
@@ -621,7 +628,8 @@ function calcular(){
     aliqIpi: parseNum($('aliqIpi').value)/100,
     pctCredIcms: parseNum($('pctCredIcms').value)/100,
     lucroRealInput: $('lucroReal').value ? parseNum($('lucroReal').value) : null,
-    lc224Liminar: $('lc224Liminar') ? $('lc224Liminar').checked : false
+    lc224Liminar: $('lc224Liminar') ? $('lc224Liminar').checked : false,
+    insumosCredPC: ($('insumosCredPC') && $('insumosCredPC').value) ? parseNum($('insumosCredPC').value) : null
   };
   const out = engine(inp);
   LAST = { empresa:coletaEmpresa(), ...out };
@@ -632,7 +640,7 @@ function calcular(){
    Não toca na tela; por isso o autoteste consegue validar exatamente este motor. */
 function engine(inp){
   const { rbt12, meses, atividade, folha, prolabore, fgts, custos, despesas,
-          aliqIcms, aliqIss, aliqIpi, pctCredIcms, lucroRealInput, lc224Liminar } = inp;
+          aliqIcms, aliqIss, aliqIpi, pctCredIcms, lucroRealInput, lc224Liminar, insumosCredPC } = inp;
   const receita = rbt12; // base de receita do período (= RBT12)
 
   const ehServico = atividade.startsWith('servico') || atividade.startsWith('transporte');
@@ -720,7 +728,9 @@ function engine(inp){
   /* ---------- 3) LUCRO REAL ---------- */
   let lucro = (lucroRealInput!==null) ? lucroRealInput : (receita - custos - despesas);
   if(lucro<0) lucro=0;
-  const baseCred = custos; // créditos PIS/COFINS sobre insumos
+  // créditos PIS/COFINS: SÓ insumos elegíveis (não mão de obra/aluguel/energia).
+  // Usa o campo específico de insumos; se vazio, cai nos custos (com aviso na UI).
+  const baseCred = (insumosCredPC!=null) ? insumosCredPC : custos;
   const pis_r = Math.max(0,(receita - baseCred))*0.0165;
   const cofins_r = Math.max(0,(receita - baseCred))*0.076;
   const irpj_r = lucro*0.15 + Math.max(0, lucro - limiteAdic)*0.10;
@@ -848,14 +858,19 @@ function donutSVG(items, total, efetivaPct){
     segs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${PALETA[i%PALETA.length]}" stroke-width="17" stroke-dasharray="${len.toFixed(2)} ${(C-len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
     off += len;
   });
-  const legenda = items.map((it,i)=>`<div class="leg-row"><span class="sw" style="background:${PALETA[i%PALETA.length]}"></span><span class="nm">${it.label}</span><span class="vl">${fmt(it.valor)}</span><span class="pc">${pct(total>0?it.valor/total*100:0)}</span></div>`).join('');
+  const legenda = items.map((it,i)=>{
+    const ef = it.base>0 ? pct(it.valor/it.base*100) : '—';
+    return `<div class="leg-row"><span class="sw" style="background:${PALETA[i%PALETA.length]}"></span><span class="nm">${it.label}</span><span class="ef">${ef}</span><span class="vl">${fmt(it.valor)}</span><span class="pc">${pct(total>0?it.valor/total*100:0)}</span></div>`;
+  }).join('');
   return `<div class="dash-donut">
     <svg viewBox="0 0 132 132" preserveAspectRatio="xMidYMid meet">${segs}
       <text x="66" y="61" text-anchor="middle" font-size="8.5" fill="#69757f">Carga efetiva</text>
       <text x="66" y="79" text-anchor="middle" font-size="17" font-weight="800" fill="#101418">${pct(efetivaPct||0)}</text>
     </svg>
-    <div class="leg">${legenda}
-      <div class="leg-row" style="border-top:1px solid var(--cinza2);margin-top:7px;padding-top:9px"><span class="sw" style="background:var(--verde)"></span><span class="nm"><b>Total de tributos</b></span><span class="vl">${fmt(total)}</span><span class="pc"></span></div>
+    <div class="leg">
+      <div class="leg-row leg-head"><span class="sw" style="visibility:hidden"></span><span class="nm">Tributo</span><span class="ef">Efetiva</span><span class="vl">Valor</span><span class="pc">% carga</span></div>
+      ${legenda}
+      <div class="leg-row" style="border-top:1px solid var(--cinza2);margin-top:7px;padding-top:9px"><span class="sw" style="background:var(--verde)"></span><span class="nm"><b>Total de tributos</b></span><span class="ef"></span><span class="vl">${fmt(total)}</span><span class="pc"></span></div>
     </div>
   </div>`;
 }
@@ -1145,7 +1160,7 @@ function inpBase(over){
   return Object.assign({
     rbt12:0, meses:12, atividade:'comercio',
     folha:0, prolabore:0, fgts:0, custos:0, despesas:0,
-    aliqIcms:0, aliqIss:0, aliqIpi:0, pctCredIcms:0, lucroRealInput:0, lc224Liminar:false
+    aliqIcms:0, aliqIss:0, aliqIpi:0, pctCredIcms:0, lucroRealInput:0, lc224Liminar:false, insumosCredPC:null
   }, over);
 }
 const TESTES = [
@@ -1187,7 +1202,27 @@ const TESTES = [
   { nome:'LC 224/2025 — Presumido Comércio R$ 6.000.000 (COM liminar → presunção original)',
     memoria:'Com liminar não aplica: IRPJ 8% · base 480k → 15%=72.000 + adic.(480k−240k)×10%=24.000 = 96.000',
     inp:inpBase({rbt12:6000000, atividade:'comercio', lc224Liminar:true}),
-    checa:[['Aplica LC 224?','aplicaLC224',false],['Presunção IRPJ','presIRPJ',0.08],['IRPJ','irpj_p',96000]] }
+    checa:[['Aplica LC 224?','aplicaLC224',false],['Presunção IRPJ','presIRPJ',0.08],['IRPJ','irpj_p',96000]] },
+
+  { nome:'ICMS Presumido — Comércio, receita 1mi, ICMS 18%, 50% das compras c/ crédito (custos 400k)',
+    memoria:'Base ICMS = 1.000.000 − 400.000×50% = 800.000 · ICMS 18% = 144.000',
+    inp:inpBase({rbt12:1000000, atividade:'comercio', custos:400000, aliqIcms:0.18, pctCredIcms:0.5}),
+    checa:[['ICMS','icms_p',144000]] },
+
+  { nome:'ISS Presumido — Serviço (Anexo IV), receita 300k, ISS 5%',
+    memoria:'ISS = receita 300.000 × 5% = 15.000',
+    inp:inpBase({rbt12:300000, atividade:'servico_iv', aliqIss:0.05}),
+    checa:[['ISS','iss_p',15000]] },
+
+  { nome:'ISS Lucro Real — Serviço, receita 300k, ISS 5%, lucro 60k',
+    memoria:'ISS = 300.000 × 5% = 15.000',
+    inp:inpBase({rbt12:300000, atividade:'servico_iv', aliqIss:0.05, lucroRealInput:60000}),
+    checa:[['ISS (Real)','iss_r',15000]] },
+
+  { nome:'PIS/COFINS Real — crédito SÓ sobre insumos (250k de 400k de custos)',
+    memoria:'Base = 1.000.000 − 250.000 (insumos) = 750.000 · PIS 1,65%=12.375 · COFINS 7,6%=57.000',
+    inp:inpBase({rbt12:1000000, atividade:'comercio', custos:400000, insumosCredPC:250000, lucroRealInput:200000}),
+    checa:[['PIS (insumos 250k)','pis_r',12375],['COFINS','cofins_r',57000]] }
 ];
 
 function aprox(a,b){
@@ -1248,7 +1283,7 @@ function coletarFormulario(){
     empNome:$('empNome').value, empCnpj:$('empCnpj').value, empCnae:$('empCnae').value,
     atividade:$('atividade').value, meses:$('meses').value, rbt,
     folha:$('folha').value, prolabore:$('prolabore').value, fgts:$('fgts').value,
-    custos:$('custos').value, despesas:$('despesas').value,
+    custos:$('custos').value, despesas:$('despesas').value, insumosCredPC:$('insumosCredPC')?$('insumosCredPC').value:'',
     aliqIcms:$('aliqIcms').value, aliqIss:$('aliqIss').value, aliqIpi:$('aliqIpi').value,
     pctCredIcms:$('pctCredIcms').value, lucroReal:$('lucroReal').value,
     lc224Liminar: $('lc224Liminar')?$('lc224Liminar').checked:false,
@@ -1262,6 +1297,7 @@ function aplicarFormulario(f){
   (f.rbt||[]).forEach((v,i)=>{ const el=document.querySelector('.rbtm[data-i="'+i+'"]'); if(el) el.value=v||''; });
   $('folha').value=f.folha||''; $('prolabore').value=f.prolabore||''; $('fgts').value=f.fgts||'';
   $('custos').value=f.custos||''; $('despesas').value=f.despesas||'';
+  if($('insumosCredPC')) $('insumosCredPC').value=f.insumosCredPC||'';
   $('aliqIcms').value=f.aliqIcms||''; $('aliqIss').value=f.aliqIss||''; $('aliqIpi').value=f.aliqIpi||'';
   $('pctCredIcms').value=(f.pctCredIcms!=null?f.pctCredIcms:'0'); $('lucroReal').value=f.lucroReal||'';
   if($('lc224Liminar')) $('lc224Liminar').checked=!!f.lc224Liminar;
