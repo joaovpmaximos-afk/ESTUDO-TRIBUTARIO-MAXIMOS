@@ -246,6 +246,14 @@
       <div><label>% das compras com crédito ICMS</label><input id="pctCredIcms" placeholder="0" value="0"></div>
     </div>
     <p class="hint" style="margin-top:12px;">ICMS estimado pelo valor agregado: (Receita − Compras c/ crédito) × alíquota. PIS/COFINS no Lucro Real consideram crédito sobre custos. Tudo é estimativa — valide com a escrituração.</p>
+
+    <div style="margin-top:14px;padding:12px 14px;background:#fff8e6;border:1px solid #f3e2a8;border-radius:8px;">
+      <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-weight:500;color:#46525c;">
+        <input type="checkbox" id="lc224Liminar" style="width:auto;margin-top:2px;flex:none;">
+        <span><b>Empresa tem liminar suspendendo a LC 224/2025</b> — marque para <u>não</u> aplicar o acréscimo de +10% na presunção do Lucro Presumido.
+        <br><span class="q" style="font-weight:400;">A LC 224/2025 majora a presunção do IRPJ/CSLL para faturamento anual acima de R$ 5 milhões (em vigor em 2026, mas suspensa por liminar em muitos casos). Sem marcar, o sistema aplica a lei.</span></span>
+      </label>
+    </div>
   </div>
 
   <!-- ===== AÇÃO ===== -->
@@ -259,7 +267,9 @@
     <div class="results-grid" id="resultsGrid"></div>
     <div class="verdict" id="verdict"></div>
     <div class="disclaimer">
-      ⚠️ <b>Aviso:</b> este estudo é uma <b>simulação</b> baseada nas tabelas vigentes (LC 123/2006 e alterações) e nos parâmetros informados. Não substitui análise de um contador. Situações específicas (substituição tributária, incentivos, exclusões de base, PERSE, monofásico, etc.) podem alterar o resultado. Confirme a legislação nos portais de pesquisa.
+      ⚠️ <b>Aviso:</b> este estudo é uma <b>simulação</b> baseada nas tabelas vigentes (LC 123/2006, regras de Lucro Presumido/Real e <b>LC 224/2025</b>) e nos parâmetros informados. Não substitui análise de um contador. Situações específicas (substituição tributária, monofásico, ISS retido, incentivos, exclusões de base, PERSE) podem alterar o resultado.
+      <br>• <b>LC 224/2025:</b> a majoração de +10% na presunção (faturamento &gt; R$ 5 mi) está sendo questionada na Justiça — se a empresa tiver liminar, marque a opção nos parâmetros.
+      <br>• <b>Reforma Tributária (CBS/IBS):</b> 2026 é ano de teste (alíquotas simbólicas 0,9%/0,1%, sem impacto financeiro real); a transição de carga começa em 2027. Este estudo usa o sistema atual (PIS/COFINS/ICMS/ISS).
     </div>
 
     <div class="actions" style="margin-top:18px;">
@@ -496,7 +506,8 @@ function calcular(){
     aliqIss: parseNum($('aliqIss').value)/100,
     aliqIpi: parseNum($('aliqIpi').value)/100,
     pctCredIcms: parseNum($('pctCredIcms').value)/100,
-    lucroRealInput: $('lucroReal').value ? parseNum($('lucroReal').value) : null
+    lucroRealInput: $('lucroReal').value ? parseNum($('lucroReal').value) : null,
+    lc224Liminar: $('lc224Liminar') ? $('lc224Liminar').checked : false
   };
   const out = engine(inp);
   LAST = { empresa:coletaEmpresa(), ...out };
@@ -507,7 +518,7 @@ function calcular(){
    Não toca na tela; por isso o autoteste consegue validar exatamente este motor. */
 function engine(inp){
   const { rbt12, meses, atividade, folha, prolabore, fgts, custos, despesas,
-          aliqIcms, aliqIss, aliqIpi, pctCredIcms, lucroRealInput } = inp;
+          aliqIcms, aliqIss, aliqIpi, pctCredIcms, lucroRealInput, lc224Liminar } = inp;
   const receita = rbt12; // base de receita do período (= RBT12)
 
   const ehServico = atividade.startsWith('servico') || atividade.startsWith('transporte');
@@ -538,12 +549,18 @@ function engine(inp){
   };
 
   /* ---------- 2) LUCRO PRESUMIDO ---------- */
-  // presunções
+  // presunções base (antes da LC 224/2025)
   let presIRPJ, presCSLL;
   if(ehServico){ presIRPJ=0.32; presCSLL=0.32; }
   else { presIRPJ=0.08; presCSLL=0.12; }
   if(atividade==='transporte_carga'){ presIRPJ=0.08; presCSLL=0.12; }
   if(atividade==='transporte_pass'){ presIRPJ=0.16; presCSLL=0.12; }
+
+  // LC 224/2025: acréscimo de 10% nos percentuais de presunção p/ receita bruta anual > R$ 5 mi
+  // (em vigor em 2026; pode estar suspensa por liminar → lc224Liminar desliga)
+  const aplicaLC224 = (receita > 5000000) && !lc224Liminar;
+  const presIRPJ0 = presIRPJ, presCSLL0 = presCSLL;
+  if(aplicaLC224){ presIRPJ = +(presIRPJ*1.10).toFixed(4); presCSLL = +(presCSLL*1.10).toFixed(4); }
 
   const baseIRPJ_p = receita*presIRPJ;
   const baseCSLL_p = receita*presCSLL;
@@ -559,12 +576,13 @@ function engine(inp){
   const presumidoTotal = irpj_p+csll_p+pis_p+cofins_p+iss_p+icms_p+ipi_p;
   const presumido = {
     nome:'Lucro Presumido',
-    anexoLabel:`Presunção IRPJ ${pct(presIRPJ*100)} · CSLL ${pct(presCSLL*100)}`,
+    anexoLabel:`Presunção IRPJ ${pct(presIRPJ*100)} · CSLL ${pct(presCSLL*100)}` + (aplicaLC224?' · ⚠️ LC 224/2025 (+10%)':''),
     total: presumidoTotal,
     efetiva: receita>0?presumidoTotal/receita*100:0,
     breakdown:[
-      ['IRPJ (15% + adic. 10%)', fmt(irpj_p)],
-      ['CSLL (9%)', fmt(csll_p)],
+      ...(aplicaLC224?[['LC 224/2025', `presunção majorada (${pct(presIRPJ0*100)}→${pct(presIRPJ*100)})`]]:[]),
+      [`IRPJ (15% + adic. 10% · base ${pct(presIRPJ*100)})`, fmt(irpj_p)],
+      [`CSLL (9% · base ${pct(presCSLL*100)})`, fmt(csll_p)],
       ['PIS (0,65%)', fmt(pis_p)],
       ['COFINS (3%)', fmt(cofins_p)],
       ...(iss_p>0?[['ISS', fmt(iss_p)]]:[]),
@@ -615,6 +633,7 @@ function engine(inp){
   // números crus p/ autoteste e auditoria
   const nums = {
     fatorR, anexo, aliqEfetiva, simplesTotal,
+    presIRPJ, presCSLL, aplicaLC224,
     irpj_p, csll_p, pis_p, cofins_p, iss_p, icms_p, ipi_p, presumidoTotal,
     irpj_r, csll_r, pis_r, cofins_r, iss_r, icms_r, ipi_r, realTotal, lucro
   };
@@ -823,7 +842,7 @@ function inpBase(over){
   return Object.assign({
     rbt12:0, meses:12, atividade:'comercio',
     folha:0, prolabore:0, fgts:0, custos:0, despesas:0,
-    aliqIcms:0, aliqIss:0, aliqIpi:0, pctCredIcms:0, lucroRealInput:0
+    aliqIcms:0, aliqIss:0, aliqIpi:0, pctCredIcms:0, lucroRealInput:0, lc224Liminar:false
   }, over);
 }
 const TESTES = [
@@ -855,13 +874,30 @@ const TESTES = [
   { nome:'Lucro Real — lucro 200k, receita 1 mi, custos 400k',
     memoria:'PIS (1mi−400k)×1,65%=9.900 · COFINS ×7,6%=45.600 · IRPJ 200k×15%=30.000 · CSLL 200k×9%=18.000',
     inp:inpBase({rbt12:1000000, atividade:'comercio', custos:400000, lucroRealInput:200000}),
-    checa:[['PIS não-cumul.','pis_r',9900],['COFINS não-cumul.','cofins_r',45600],['IRPJ','irpj_r',30000],['CSLL','csll_r',18000],['Total','realTotal',103500]] }
+    checa:[['PIS não-cumul.','pis_r',9900],['COFINS não-cumul.','cofins_r',45600],['IRPJ','irpj_r',30000],['CSLL','csll_r',18000],['Total','realTotal',103500]] },
+
+  { nome:'LC 224/2025 — Presumido Comércio R$ 6.000.000 (>5mi, SEM liminar)',
+    memoria:'Presunção majorada: IRPJ 8%→8,8% e CSLL 12%→13,2% · base IRPJ 528k → 15%=79.200 + adic.(528k−240k)×10%=28.800 = 108.000 · CSLL base 792k×9%=71.280',
+    inp:inpBase({rbt12:6000000, atividade:'comercio', lc224Liminar:false}),
+    checa:[['Aplica LC 224?','aplicaLC224',true],['Presunção IRPJ','presIRPJ',0.088],['Presunção CSLL','presCSLL',0.132],['IRPJ','irpj_p',108000],['CSLL','csll_p',71280]] },
+
+  { nome:'LC 224/2025 — Presumido Comércio R$ 6.000.000 (COM liminar → presunção original)',
+    memoria:'Com liminar não aplica: IRPJ 8% · base 480k → 15%=72.000 + adic.(480k−240k)×10%=24.000 = 96.000',
+    inp:inpBase({rbt12:6000000, atividade:'comercio', lc224Liminar:true}),
+    checa:[['Aplica LC 224?','aplicaLC224',false],['Presunção IRPJ','presIRPJ',0.08],['IRPJ','irpj_p',96000]] }
 ];
 
 function aprox(a,b){
+  if(typeof b==='boolean') return a===b;
   if(typeof b==='string') return a===b;
   const tol = Math.max(0.01, Math.abs(b)*1e-6); // 1 centavo ou 0,0001%
   return Math.abs(a-b) <= tol;
+}
+function fmtVal(campo,v){
+  if(typeof v==='boolean') return v?'Sim':'Não';
+  if(typeof v==='string') return v;
+  if(campo==='aliqEfetiva'||campo==='presIRPJ'||campo==='presCSLL') return pct(v*100);
+  return fmt(v);
 }
 function autoteste(){
   let passou=0, total=0, html='';
@@ -872,8 +908,8 @@ function autoteste(){
       const obtido = nums[campo];
       const ok = aprox(obtido, esperado);
       if(ok) passou++;
-      const fEsp = typeof esperado==='string'?esperado : (campo==='aliqEfetiva'?pct(esperado*100):fmt(esperado));
-      const fObt = typeof obtido==='string'?obtido : (campo==='aliqEfetiva'?pct(obtido*100):fmt(obtido));
+      const fEsp = fmtVal(campo, esperado);
+      const fObt = fmtVal(campo, obtido);
       return `<tr style="background:${ok?'#f0fbf3':'#fdeaea'}">
         <td style="text-align:left">${rotulo}</td>
         <td style="text-align:right">${fEsp}</td>
