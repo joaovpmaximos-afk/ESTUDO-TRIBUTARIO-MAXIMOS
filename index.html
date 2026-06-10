@@ -883,10 +883,11 @@ function coletaEmpresa(){
    ============================================================ */
 function render(regimes, melhor, data){
   let html='';
+  const receitaR = data.receita;
   regimes.forEach(r=>{
     const isBest = r.key===melhor.key;
     const linhasComp = (r.comp||[]).map(c=>{
-      const ef = c.base>0 ? pct(c.valor/c.base*100) : '—';
+      const ef = receitaR>0 ? pct(c.valor/receitaR*100) : '—';   // efetiva = imposto ÷ faturamento
       return `<tr><td>${c.label}</td><td>${fmt(c.valor)}</td><td>${ef}</td></tr>`;
     }).join('');
     html += `<div class="regime ${r.cls} ${isBest?'best':''}">
@@ -934,7 +935,7 @@ const CORES = { simples:'#1c2228', presumido:'#39414a', real:'#6b7681' };   // t
 const PALETA = ['#27c24c','#101418','#1ea33e','#6b7681','#39414a','#9aa5ad','#c8d0d6']; // verde + preto + cinzas
 
 // gráfico de rosca (donut) em SVG puro — composição de tributos
-function donutSVG(items, total, efetivaPct){
+function donutSVG(items, total, efetivaPct, receita){
   items = (items||[]).filter(it=> it.valor>0);
   const r=50, cx=66, cy=66, C=2*Math.PI*r;
   let off=0, segs='';
@@ -944,7 +945,7 @@ function donutSVG(items, total, efetivaPct){
     off += len;
   });
   const legenda = items.map((it,i)=>{
-    const ef = it.base>0 ? pct(it.valor/it.base*100) : '—';
+    const ef = (receita>0) ? pct(it.valor/receita*100) : '—';   // efetiva = imposto ÷ faturamento
     return `<div class="leg-row"><span class="sw" style="background:${PALETA[i%PALETA.length]}"></span><span class="nm">${it.label}</span><span class="ef">${ef}</span><span class="vl">${fmt(it.valor)}</span><span class="pc">${pct(total>0?it.valor/total*100:0)}</span></div>`;
   }).join('');
   return `<div class="dash-donut">
@@ -976,12 +977,12 @@ function renderDashboard(regimes, melhor, data){
     </div>`;
   });
 
-  // 2) COMPOSIÇÃO POR REGIME — Base · Alíq. Nominal · Valor · Alíq. Efetiva (imposto ÷ base)
+  // 2) COMPOSIÇÃO POR REGIME — Base · Alíq. Nominal · Valor · Alíq. Efetiva (imposto ÷ FATURAMENTO)
   let tabelas = '';
   regimes.forEach(r=>{
     const best = r.key===melhor.key;
     const linhas = (r.comp||[]).map(c=>{
-      const efetiva = c.base>0 ? (c.valor/c.base*100) : 0;       // alíquota efetiva = valor ÷ base × 100
+      const efetiva = receita>0 ? (c.valor/receita*100) : 0;     // alíquota efetiva = valor ÷ faturamento × 100
       const nominal = (c.nominal!=null && c.nominal>0) ? pct(c.nominal) : '—';
       return `<tr>
         <td>${c.label}</td>
@@ -1044,7 +1045,7 @@ function renderDashboard(regimes, melhor, data){
     notas.push('Os créditos de PIS/COFINS dependem de insumos elegíveis — confirme a base de crédito com a contabilidade.');
   }
 
-  const donut = donutSVG(melhor.comp||[], melhor.total, melhor.efetiva);
+  const donut = donutSVG(melhor.comp||[], melhor.total, melhor.efetiva, receita);
 
   $('dashboard').innerHTML = `
     <div class="dash-sec">
@@ -1058,7 +1059,7 @@ function renderDashboard(regimes, melhor, data){
     <div class="dash-sec">
       <h3>🧾 Composição por tributo — Base, Valor, Alíquota Nominal e Efetiva</h3>
       <div class="dash-tables">${tabelas}</div>
-      <div class="hint" style="margin-top:10px;"><b>Alíquota Efetiva (%) = (Valor do Imposto ÷ Base de Cálculo) × 100.</b> A última linha traz a <b>Alíquota Efetiva Total do regime</b> = total de tributos ÷ receita bruta — é o número usado para comparar qual regime tem a menor carga.</div>
+      <div class="hint" style="margin-top:10px;"><b>Alíquota Efetiva (%) = (Valor do Imposto ÷ Faturamento) × 100</b> — a carga real de cada tributo sobre a receita (ex.: serviço no Presumido → IRPJ 4,80%, CSLL 2,88%). A coluna "Base de Cálculo" mostra a base técnica de cada tributo (ex.: lucro presumido no IRPJ). A última linha traz a <b>Alíquota Efetiva Total</b> = total ÷ faturamento.</div>
     </div>
     <div class="dash-conc">
       <h3>🎯 Conclusão — por que o ${melhor.nome} é a melhor escolha</h3>
@@ -1101,7 +1102,7 @@ function exportRows(){
   d.regimes.forEach(r=>{
     rows.push([r.nome.toUpperCase()+' — '+r.anexoLabel,'','','','']);
     (r.comp||[]).forEach(c=>{
-      const ef  = c.base>0 ? pct(c.valor/c.base*100) : '—';
+      const ef  = d.receita>0 ? pct(c.valor/d.receita*100) : '—';   // efetiva = imposto ÷ faturamento
       const nom = (c.nominal!=null && c.nominal>0) ? pct(c.nominal) : '—';
       rows.push([c.label, fmt(c.base), nom, fmt(c.valor), ef]);
     });
@@ -1164,7 +1165,7 @@ function exportPDF(){
   // detalhamento por regime — Base, Alíq. Nominal, Valor e Alíq. Efetiva por tributo
   d.regimes.forEach(r=>{
     const body = (r.comp||[]).map(c=>{
-      const ef  = c.base>0 ? pct(c.valor/c.base*100) : '—';
+      const ef  = d.receita>0 ? pct(c.valor/d.receita*100) : '—';   // efetiva = imposto ÷ faturamento
       const nom = (c.nominal!=null && c.nominal>0) ? pct(c.nominal) : '—';
       return [c.label, fmt(c.base), nom, fmt(c.valor), ef];
     });
