@@ -589,8 +589,8 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
           <input class="perc" id="aliqIcms" placeholder="0">
         </div>
         <div>
-          <label>Alíquota ISS (%) <span class="q">(serviços)</span></label>
-          <input class="perc" id="aliqIss" placeholder="0">
+          <label>Alíquota ISS (%) <span class="q">(serviços · mínimo legal 2%)</span></label>
+          <input class="perc" id="aliqIss" value="2" placeholder="2">
         </div>
         <div>
           <label>Alíquota IPI (%) <span class="q">(indústria)</span></label>
@@ -998,14 +998,20 @@ function updRbt(){
   const res = $('projResumo');
   if(res){
     if(p.rbtGrade<=0 && p.soma<=0){ res.innerHTML=''; }
+    else if(p.rbtGrade<=0){
+      // grade global vazia: a projeção (meses/valores por anexo) define o RBT12 — não é erro
+      res.innerHTML = `<span style="color:var(--green-deep)">✓ RBT12 global definido pela projeção: ${fmt(p.soma)} em ${p.linhas.length} anexo(s) — o estudo parte deste total. A grade de meses acima é opcional quando você lança por anexo.</span>`;
+    }
     else if(p.linhas[0].auto || Math.abs(p.diferenca)<=0.01){
       res.innerHTML = `<span style="color:var(--green-deep)">✓ Projeção fechada: ${fmt(p.soma)} distribuídos em ${p.linhas.length} anexo(s) — o estudo parte deste total.</span>`;
     } else {
       res.innerHTML = `<span style="color:var(--red)">⚠ A projeção soma ${fmt(p.soma)}, mas o RBT12 dos meses é ${fmt(p.rbtGrade)} (diferença ${fmt(p.diferenca)}). Deixe o valor do anexo 1 vazio para completar automaticamente — ou o estudo usará a soma da projeção.</span>`;
     }
   }
-  if($('rbtTotalLabel')) $('rbtTotalLabel').textContent = media ? 'RBT12 global projetado (média × 12)' : 'RBT12 global (soma dos meses)';
-  $('rbtTotal').textContent = fmt(p.rbtGrade);
+  const totalExibe = p.rbtGrade>0 ? p.rbtGrade : p.soma;
+  if($('rbtTotalLabel')) $('rbtTotalLabel').textContent = media ? 'RBT12 global projetado (média × 12)'
+    : (p.rbtGrade>0 ? 'RBT12 global (soma dos meses)' : (p.soma>0 ? 'RBT12 global (soma da projeção)' : 'RBT12 global (soma dos meses)'));
+  $('rbtTotal').textContent = fmt(totalExibe);
   syncAnexoInfo();
 }
 /* formata campos de dinheiro ao sair */
@@ -1249,6 +1255,9 @@ function engine(inp){
   const recICMS = ativs.filter(a=>ehICMSTipo(a.tipo)).reduce((s,a)=>s+a.rbt12,0)*f;
   const recIPI  = ativs.filter(a=>a.tipo==='industria').reduce((s,a)=>s+a.rbt12,0)*f;
 
+  // ISS fora do Simples: piso constitucional de 2% (EC 37/2002 / LC 116) — vale p/ Presumido, Real e sublimite
+  const aliqIssCalc = Math.max(aliqIss||0, 0.02);
+
   const warnings = [];
   const usaFatorR = ativs.some(a=>['servico_iii','servico_v'].includes(a.tipo));
 
@@ -1307,7 +1316,7 @@ function engine(inp){
   let icms_s = 0, iss_s = 0;
   if(rbt12 > SUBLIMITE){
     if(recICMS>0) icms_s = Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms;
-    if(recISS>0)  iss_s = recISS*aliqIss;
+    if(recISS>0)  iss_s = recISS*aliqIssCalc;
   }
   // Anexo IV: CPP nunca está no DAS — por fora, proporcional à receita do Anexo IV (atividades concomitantes)
   const recIV = detAtivs.filter(d=>d.anexo==='IV').reduce((s,d)=>s+d.recA,0);
@@ -1320,7 +1329,7 @@ function engine(inp){
     .map(k=>({label:'DAS · '+repNomes[k], valor:agg[k], base:receita, nominal:null}));
   if(cpp_simples>0) compSimples.push({label:'INSS patronal (fora do DAS — Anexo IV'+(receita-recIV>0.005?', proporcional':'')+')', valor:cpp_simples, base:folhaPer+proPer, nominal:null});
   if(icms_s>0) compSimples.push({label:'ICMS fora do DAS (sublimite)', valor:icms_s, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100});
-  if(iss_s>0) compSimples.push({label:'ISS fora do DAS (sublimite)', valor:iss_s, base:recISS, nominal:aliqIss*100});
+  if(iss_s>0) compSimples.push({label:'ISS fora do DAS (sublimite)', valor:iss_s, base:recISS, nominal:aliqIssCalc*100});
 
   const anexosUsados = [...new Set(detAtivs.map(d=>d.anexo))];
   const simples = {
@@ -1340,7 +1349,6 @@ function engine(inp){
   else if(rbt12 > SUBLIMITE){
     warnings.push({t:'info', m:'RBT12 global acima do sublimite de R$ 3,6 mi: ICMS/ISS saíram do DAS e foram calculados por fora, pela apuração normal.'});
     if(recICMS>0 && aliqIcms===0) warnings.push({t:'warn', m:'Informe a alíquota de ICMS — com o sublimite ativo, o ICMS por fora está zerado.'});
-    if(recISS>0 && aliqIss===0) warnings.push({t:'warn', m:'Informe a alíquota de ISS — com o sublimite ativo, o ISS por fora está zerado.'});
   }
   if(usaFatorR && fatorR<0.28 && fatorR>=0.22)
     warnings.push({t:'info', m:`Fator R em ${pct(fatorR*100)} — faltam ${pct((0.28-fatorR)*100)} de folha/RBT12 para migrar do Anexo V ao III. Avalie ajustar o pró-labore.`});
@@ -1373,7 +1381,7 @@ function engine(inp){
   const csll_p = baseCSLL_p*0.09;
   const pis_p = receita*0.0065;
   const cofins_p = receita*0.03;
-  const iss_p = recISS*aliqIss;
+  const iss_p = recISS*aliqIssCalc;
   const icms_p = recICMS>0 ? Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms : 0;
   const ipi_p = recIPI*aliqIpi;
   const cpp_p = cppNormal;
@@ -1392,7 +1400,7 @@ function engine(inp){
       {label:'CSLL (9%)', valor:csll_p, base:baseCSLL_p, nominal:9},
       {label:'PIS (cumulativo)', valor:pis_p, base:receita, nominal:0.65},
       {label:'COFINS (cumulativo)', valor:cofins_p, base:receita, nominal:3},
-      ...(iss_p>0?[{label:'ISS', valor:iss_p, base:recISS, nominal:aliqIss*100}]:[]),
+      ...(iss_p>0?[{label:'ISS', valor:iss_p, base:recISS, nominal:aliqIssCalc*100}]:[]),
       ...(icms_p>0?[{label:'ICMS', valor:icms_p, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100}]:[]),
       ...(ipi_p>0?[{label:'IPI', valor:ipi_p, base:recIPI, nominal:aliqIpi*100}]:[]),
       ...(cpp_p>0?[{label:'INSS patronal', valor:cpp_p, base:folhaPer+proPer, nominal:null}]:[])
@@ -1404,7 +1412,7 @@ function engine(inp){
   const baseCred = (insumosPer!=null) ? insumosPer : custosPer;
   const pis_r = Math.max(0,(receita - baseCred))*0.0165;
   const cofins_r = Math.max(0,(receita - baseCred))*0.076;
-  const iss_r = recISS*aliqIss;
+  const iss_r = recISS*aliqIssCalc;
   const icms_r = recICMS>0 ? Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms : 0;
   const ipi_r = recIPI*aliqIpi;
   const cpp_r = cppNormal;
@@ -1427,15 +1435,15 @@ function engine(inp){
       {label:'CSLL (9%)', valor:csll_r, base:lucro, nominal:9},
       {label:'PIS não-cumulativo', valor:pis_r, base:Math.max(0,receita-baseCred), nominal:1.65},
       {label:'COFINS não-cumulativo', valor:cofins_r, base:Math.max(0,receita-baseCred), nominal:7.6},
-      ...(iss_r>0?[{label:'ISS', valor:iss_r, base:recISS, nominal:aliqIss*100}]:[]),
+      ...(iss_r>0?[{label:'ISS', valor:iss_r, base:recISS, nominal:aliqIssCalc*100}]:[]),
       ...(icms_r>0?[{label:'ICMS', valor:icms_r, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100}]:[]),
       ...(ipi_r>0?[{label:'IPI', valor:ipi_r, base:recIPI, nominal:aliqIpi*100}]:[]),
       ...(cpp_r>0?[{label:'INSS patronal', valor:cpp_r, base:folhaPer+proPer, nominal:null}]:[])
     ]
   };
 
-  if(recISS>0 && aliqIss===0 && rbt12<=SUBLIMITE)
-    warnings.push({t:'warn', m:'Alíquota de ISS não informada — Presumido e Real estão sem ISS; o comparativo pode favorecê-los indevidamente.'});
+  if(recISS>0 && aliqIss<0.02)
+    warnings.push({t:'info', m:'ISS aplicado no piso legal de 2% (EC 37/2002) no Presumido e no Real'+(rbt12>SUBLIMITE?' e na parcela fora do DAS':'')+' — informe a alíquota do município na seção 04 se for maior.'});
   if(recICMS>0 && aliqIcms===0 && rbt12<=SUBLIMITE)
     warnings.push({t:'warn', m:'Alíquota de ICMS não informada — Presumido e Real estão sem ICMS; o comparativo pode favorecê-los indevidamente.'});
   if(aplicaLC224)
@@ -1997,7 +2005,12 @@ const TESTES = [
   { nome:'ATIVIDADES MISTAS — Comércio 500k + Anexo IV 500k, folha 100k (CPP proporcional)',
     memoria:'Global 1 mi: Anexo I 4ª fx 8,45% → DAS 42.250 · Anexo IV 4ª fx (140.000−39.780)÷1mi = 10,022% → DAS 50.110 · CPP fora: 26.800 × (500k÷1mi) = 13.400 · total 105.760',
     inp:inpBase({atividades:[{tipo:'comercio',rbt12:500000},{tipo:'servico_iv',rbt12:500000}], folha:100000}),
-    checa:[['Efetiva Comércio','efetiva0',0.0845],['DAS Comércio','das0',42250],['DAS Anexo IV','das1',50110],['CPP por fora (proporcional)','cpp_simples',13400],['Total Simples','simplesTotal',105760]] }
+    checa:[['Efetiva Comércio','efetiva0',0.0845],['DAS Comércio','das0',42250],['DAS Anexo IV','das1',50110],['CPP por fora (proporcional)','cpp_simples',13400],['Total Simples','simplesTotal',105760]] },
+
+  { nome:'Piso do ISS (2%) — Presumido/Real sem alíquota informada (serviço 300k)',
+    memoria:'EC 37/2002: ISS mínimo legal de 2% · ISS = 300.000 × 2% = 6.000 no Presumido e no Real (informando 5%, usa 5% — caso coberto nos testes de ISS acima)',
+    inp:inpBase({rbt12:300000, atividade:'servico_iii_fixo', aliqIss:0, lucroRealInput:60000}),
+    checa:[['ISS Presumido (piso 2%)','iss_p',6000],['ISS Real (piso 2%)','iss_r',6000]] }
 ];
 
 function aprox(a,b){
@@ -2197,7 +2210,7 @@ function aplicarFormulario(f){
   $('inssPatronal').value=(f.inssPatronal!=null && f.inssPatronal!=='')?f.inssPatronal:'26,8';
   $('custos').value=f.custos||''; $('despesas').value=f.despesas||'';
   $('insumosCredPC').value=f.insumosCredPC||''; $('lucroReal').value=f.lucroReal||'';
-  $('aliqIcms').value=f.aliqIcms||''; $('aliqIss').value=f.aliqIss||''; $('aliqIpi').value=f.aliqIpi||'';
+  $('aliqIcms').value=f.aliqIcms||''; $('aliqIss').value=(f.aliqIss!=null&&f.aliqIss!=='')?f.aliqIss:'2'; $('aliqIpi').value=f.aliqIpi||'';
   $('pctCredIcms').value=(f.pctCredIcms!=null&&f.pctCredIcms!=='')?f.pctCredIcms:'0';
   $('lc224Liminar').checked=!!f.lc224Liminar;
   updRbt();
