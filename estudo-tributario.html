@@ -141,49 +141,31 @@ input.money,input.perc{font-family:var(--fm); text-align:right; font-variant-num
 .rbt-total .lbl{font-family:var(--fm); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
 .rbt-total .val{font-family:var(--fm); font-weight:600; font-size:24px; font-variant-numeric:tabular-nums; margin-left:auto}
 
-/* ===== matriz mês × anexo (receitas segregadas por mês) ===== */
-.matriz-wrap{overflow-x:auto; border:1px solid var(--hair2); border-radius:13px; background:var(--surface)}
-.matriz{width:100%; border-collapse:collapse; min-width:580px}
-.matriz thead th{
-  font-family:var(--fm); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
-  color:var(--muted); font-weight:500; padding:10px 10px 9px; border-bottom:1px solid var(--hair);
-  background:var(--paper); text-align:left; vertical-align:top;
-}
-.matriz th.m-mes, .matriz td.m-mes{width:62px; white-space:nowrap}
-.matriz td.m-mes{
-  font-family:var(--fm); font-size:9.5px; color:var(--faint); text-transform:uppercase;
-  letter-spacing:.08em; padding:0 8px 0 14px; background:var(--paper); border-right:1px solid var(--hair);
-}
-.matriz tbody td{border-bottom:1px solid var(--hair); padding:0}
-.matriz td.m-cel input{
-  width:100%; min-width:104px; border:none; border-radius:0; background:transparent;
-  padding:8px 11px; font-family:var(--fm); text-align:right; font-variant-numeric:tabular-nums; font-size:12.5px;
-}
-.matriz td.m-cel input:focus{box-shadow:inset 0 0 0 2px var(--green); background:#fff}
-.matriz td.m-cel{border-right:1px dashed var(--hair)}
-.matriz td.m-tot{
-  font-family:var(--fm); text-align:right; padding:8px 13px; color:var(--muted);
-  font-variant-numeric:tabular-nums; font-size:12px; background:var(--paper); white-space:nowrap; width:112px;
-}
-.m-head-row{display:flex; gap:6px; align-items:center}
-.m-head-row select{font-size:11.5px; padding:6px 7px; min-width:138px}
-.m-rm{flex:none; border:1px solid var(--hair2); background:var(--surface); color:var(--muted); border-radius:7px; width:26px; height:28px; cursor:pointer; font-size:12px; line-height:1; transition:.15s}
+.rbt-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+.rbt-cell{background:var(--surface); border:1px solid var(--hair2); border-radius:var(--r); padding:9px 11px 8px; transition:border-color .15s, box-shadow .15s}
+.rbt-cell:focus-within{border-color:var(--green); box-shadow:0 0 0 3px rgba(39,194,76,.14)}
+.rbt-cell em{display:block; font-style:normal; font-family:var(--fm); font-size:10px; letter-spacing:.1em; color:var(--faint); text-transform:uppercase; margin-bottom:3px}
+.rbt-cell input{border:none; padding:0; border-radius:0; background:transparent; font-family:var(--fm); text-align:right; font-size:13.5px; font-variant-numeric:tabular-nums}
+.rbt-cell input:focus{box-shadow:none}
+.rbt-tools{display:flex; align-items:end; gap:10px; flex-wrap:wrap; margin-top:16px}
+.rbt-tools .fill{flex:1; min-width:230px}
+
+/* ===== projeção por anexo (divide o RBT12 entre as atividades) ===== */
+.proj-title{font-family:var(--fd); font-weight:600; font-size:17px; margin:30px 0 4px; padding-top:22px; border-top:1px solid var(--hair)}
+.proj-row{display:flex; gap:10px; align-items:center; padding:10px 13px; border:1px solid var(--hair2); border-radius:12px; background:var(--surface); margin-bottom:9px; flex-wrap:wrap}
+.proj-num{flex:none; font-family:var(--fm); font-size:10px; color:var(--faint); width:14px; text-align:center}
+.proj-row select{flex:2; min-width:230px; font-size:12.5px; padding:8px 9px}
+.proj-row .ativValor{flex:1; min-width:150px; max-width:215px}
+.m-rm{flex:none; border:1px solid var(--hair2); background:var(--surface); color:var(--muted); border-radius:7px; width:28px; height:30px; cursor:pointer; font-size:12px; line-height:1; transition:.15s}
 .m-rm:hover{border-color:var(--red); color:var(--red)}
 .m-badge{
-  font-family:var(--fm); font-size:9px; color:var(--green-deep); background:var(--green-soft);
-  border:1px solid #bfe6cb; border-radius:20px; padding:3px 8px; white-space:nowrap;
-  display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; margin-top:6px; text-transform:none; letter-spacing:0;
+  font-family:var(--fm); font-size:9.5px; color:var(--green-deep); background:var(--green-soft);
+  border:1px solid #bfe6cb; border-radius:20px; padding:4px 9px; white-space:nowrap;
+  display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis;
 }
-.matriz tfoot td{
-  border-top:2px solid var(--ink); padding:10px 11px; font-family:var(--fm); font-weight:600;
-  text-align:right; font-variant-numeric:tabular-nums; font-size:12.5px; white-space:nowrap;
-}
-.matriz tfoot td:first-child{font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:500; text-align:left; padding-left:14px}
-.matriz tfoot td.m-glob{color:var(--green-deep)}
-.matriz tfoot tr.m-tools td{border-top:1px solid var(--hair); font-weight:400; padding:6px 6px}
-.m-tool-in{display:flex; gap:4px; align-items:center; justify-content:flex-end; flex-wrap:wrap}
-.m-tool-in .btn-text{padding:4px 6px; font-size:11.5px}
-.m-tool-in input{width:118px; font-size:11px; padding:5px 8px; border:1px solid var(--hair2); border-radius:7px; text-align:right; font-family:var(--fm)}
+.proj-pc{font-family:var(--fm); font-size:11px; color:var(--muted); white-space:nowrap; margin-left:auto; font-variant-numeric:tabular-nums}
+#projResumo{font-size:12px; line-height:1.6; margin:10px 2px 0; font-family:var(--fm)}
+@media(max-width:880px){ .proj-pc{margin-left:0; width:100%; text-align:left; padding-left:24px} }
 .btn-add-ativ{width:100%; border:1px dashed var(--hair2); background:transparent; color:var(--muted); border-radius:13px; padding:13px; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; margin-bottom:4px}
 .btn-add-ativ:hover{border-color:var(--green); color:var(--green-deep); background:var(--green-soft)}
 
@@ -502,22 +484,37 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
   <section class="sec sec-form">
     <div class="sec-tag"><b>02</b>Receita</div>
     <div class="sec-body">
-      <h2 class="sec-title">RBT12 — receita mensal, separada por anexo</h2>
-      <p class="sec-sub">Lance o faturamento de cada mês nas colunas das atividades — o mesmo mês pode ter receita em mais de um anexo (ex.: mês 5 com 50.000 no Anexo I e 70.000 no Anexo II). A tabela soma o mês, soma cada anexo e o <b>RBT12 global</b>; cada receita é tributada pelo anexo próprio com a alíquota definida pela soma (art. 18 §4º, LC 123).</p>
-      <div id="ativBlocos"></div>
-      <button class="btn-add-ativ" id="btnAddAtiv" onclick="addAtividade()">+ Adicionar atividade (até 4)</button>
+      <h2 class="sec-title">RBT12 — receita bruta dos últimos 12 meses</h2>
+      <p class="sec-sub">Informe o faturamento total da empresa em cada mês. A soma define a faixa e a alíquota efetiva do Simples e é a receita-base dos três regimes. A divisão por anexo é feita logo abaixo, na projeção.</p>
+      <div class="rbt-grid" id="rbtBody"></div>
       <div class="rbt-total">
-        <span class="lbl" id="rbtTotalLabel">RBT12 global (soma das atividades)</span>
+        <span class="lbl" id="rbtTotalLabel">RBT12 global (soma dos meses)</span>
         <span class="val num" id="rbtTotal">R$ 0,00</span>
       </div>
-      <p style="font-size:11.5px;color:var(--muted);line-height:1.6;margin:8px 0 0">↑ O estudo inteiro parte desta soma: ela define a faixa e a alíquota efetiva de <b>todos</b> os anexos (badge verde de cada atividade) e é a receita-base do Presumido e do Real. Os valores lançados no Anexo I somam com os do II, III, IV…</p>
       <div class="note blue" style="margin-top:18px">
         <label class="switch">
           <input type="checkbox" id="mediaFormulada" onchange="updRbt()">
           <span class="tk"></span>
-          <span><b>Início de atividade — usar média formulada.</b> Sem 12 meses completos, o RBT12 é projetado por atividade: <b>(média dos meses preenchidos) × 12</b> — proporcionalização do art. 18 da LC 123. Desmarcado, soma os meses normalmente.</span>
+          <span><b>Início de atividade — usar média formulada.</b> Sem 12 meses completos, o RBT12 é projetado: <b>(média dos meses preenchidos) × 12</b> — proporcionalização do art. 18 da LC 123. Desmarcado, soma os meses normalmente.</span>
         </label>
       </div>
+      <div class="rbt-tools">
+        <button class="btn btn-text" onclick="preencherIgual()"><span class="ic" data-ic="refresh"></span> Repetir o 1º mês em todos</button>
+        <button class="btn btn-text" onclick="zerarRbt()"><span class="ic" data-ic="x"></span> Zerar</button>
+        <div class="fill">
+          <label>Ou informe o faturamento anual e distribua</label>
+          <div class="fld-join">
+            <input id="fatAnual" class="money" placeholder="Ex.: 1.200.000,00">
+            <button class="btn btn-ghost" onclick="distribuir()">Distribuir</button>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="proj-title">Projeção por anexo</h3>
+      <p class="sec-sub" style="margin-bottom:14px">Divida o RBT12 acima entre até 4 anexos (atividades mistas). O <b>anexo 1 completa sozinho o restante</b> — informe valor só nas demais linhas (ex.: quanto do faturamento é comércio, quanto é serviço). A faixa e a alíquota de cada anexo saem da <b>soma global</b> (art. 18 §4º, LC 123), e o estudo parte daí.</p>
+      <div id="ativBlocos"></div>
+      <button class="btn-add-ativ" id="btnAddAtiv" onclick="addAtividade()">+ Adicionar anexo na projeção</button>
+      <p id="projResumo"></p>
     </div>
   </section>
 
@@ -813,121 +810,92 @@ function anexoCurto(tipo){
 }
 const MAX_ATIVS = 4;
 
-function buildAtividades(dados){
-  // dados: [{tipo, rbt:[12 strings]}] — renderiza a MATRIZ mês (linhas) × anexo (colunas)
-  if(!dados || !dados.length) dados = [{tipo:'comercio', rbt:[]}];
-  dados = dados.slice(0, MAX_ATIVS);
-  const heads = dados.map((a,ai)=>{
+/* --- grade global: 12 meses da empresa inteira (modelo original) --- */
+function buildRbt(){
+  $('rbtBody').innerHTML = MESES_NOMES.map((m,i)=>
+    `<div class="rbt-cell"><em>${m}</em><input class="rbtm" data-i="${i}" placeholder="0,00" inputmode="decimal" oninput="updRbt()"></div>`).join('');
+}
+function getRbt12(){
+  let soma=0, preenchidos=0;
+  document.querySelectorAll('.rbtm').forEach(inp=>{ const v=parseNum(inp.value); soma+=v; if(v>0) preenchidos++; });
+  const media = $('mediaFormulada') && $('mediaFormulada').checked;
+  if(media && preenchidos>0) return (soma/preenchidos)*12;   // média formulada: (média dos meses preenchidos) × 12
+  return soma;
+}
+function preencherIgual(){
+  const first = document.querySelector('.rbtm[data-i="0"]').value;
+  document.querySelectorAll('.rbtm').forEach(inp=> inp.value=first);
+  updRbt();
+}
+function zerarRbt(){ document.querySelectorAll('.rbtm').forEach(inp=> inp.value=''); updRbt(); }
+function distribuir(){
+  const anual = parseNum($('fatAnual').value);
+  const m = (anual/12);
+  document.querySelectorAll('.rbtm').forEach(inp=> inp.value = m ? m.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '');
+  updRbt();
+}
+
+/* --- projeção por anexo: divide o RBT12 entre até 4 atividades.
+       Linha 1 vazia = completa automaticamente o restante do RBT12. --- */
+function buildProjecao(linhas){
+  if(!linhas || !linhas.length) linhas = [{tipo:'comercio', valor:''}];
+  linhas = linhas.slice(0, MAX_ATIVS);
+  $('ativBlocos').innerHTML = linhas.map((a,ai)=>{
     const opts = TIPOS.map(([v,l])=>`<option value="${v}"${v===a.tipo?' selected':''}>${l}</option>`).join('');
-    return `<th>
-      <div class="m-head-row">
-        <select class="ativSel" data-a="${ai}" onchange="ativTipoChange()" title="Atividade ${ai+1}">${opts}</select>
-        ${ai>0?`<button class="m-rm" onclick="rmAtividade(${ai})" title="Remover atividade">✕</button>`:''}
-      </div>
+    return `<div class="proj-row">
+      <span class="proj-num">${ai+1}</span>
+      <select class="ativSel" data-a="${ai}" onchange="ativTipoChange()">${opts}</select>
+      <input class="money ativValor" data-a="${ai}" placeholder="${ai===0?'automático = restante do RBT12':'0,00'}" inputmode="decimal" oninput="updRbt()" value="${a.valor?String(a.valor).replace(/"/g,'&quot;'):''}">
       <span class="m-badge" id="ativAnexo${ai}">—</span>
-    </th>`;
+      <span class="proj-pc" id="ativPc${ai}">—</span>
+      ${ai>0?`<button class="m-rm" onclick="rmAtividade(${ai})" title="Remover este anexo da projeção">✕</button>`:''}
+    </div>`;
   }).join('');
-  const linhas = MESES_NOMES.map((m,mi)=>{
-    const cels = dados.map((a,ai)=>
-      `<td class="m-cel"><input class="rbtm" data-a="${ai}" data-i="${mi}" placeholder="0,00" inputmode="decimal" oninput="updRbt()" value="${(a.rbt&&a.rbt[mi])?String(a.rbt[mi]).replace(/"/g,'&quot;'):''}"></td>`).join('');
-    return `<tr><td class="m-mes">${m}</td>${cels}<td class="m-tot" id="mesTotal${mi}">—</td></tr>`;
-  }).join('');
-  const totFoot = dados.map((a,ai)=>`<td id="ativTotal${ai}">R$ 0,00</td>`).join('');
-  const toolFoot = dados.map((a,ai)=>`<td><div class="m-tool-in">
-      <button class="btn btn-text" onclick="preencherIgualA(${ai})" title="Repetir o 1º mês nos 12">↺ 1º mês</button>
-      <button class="btn btn-text" onclick="zerarA(${ai})" title="Zerar esta coluna">✕ zerar</button>
-      <input class="fatAnualA" data-a="${ai}" placeholder="Anual p/ distribuir" onkeydown="if(event.key==='Enter')distribuirA(${ai})">
-      <button class="btn btn-ghost btn-sm" onclick="distribuirA(${ai})">OK</button>
-    </div></td>`).join('');
-  $('ativBlocos').innerHTML = `<div class="matriz-wrap"><table class="matriz">
-    <thead><tr><th class="m-mes">Mês</th>${heads}<th style="text-align:right">Total do mês</th></tr></thead>
-    <tbody>${linhas}</tbody>
-    <tfoot>
-      <tr><td>RBT12</td>${totFoot}<td class="m-glob" id="matrizGlobal">R$ 0,00</td></tr>
-      <tr class="m-tools"><td></td>${toolFoot}<td></td></tr>
-    </tfoot>
-  </table></div>`;
-  $('btnAddAtiv').style.display = dados.length>=MAX_ATIVS ? 'none' : 'block';
-  $('btnAddAtiv').textContent = `+ Adicionar atividade no mesmo estudo (${dados.length}/${MAX_ATIVS})`;
-  document.querySelectorAll('.fatAnualA').forEach(i=> i.addEventListener('blur', fmtMoneyBlur));
+  $('btnAddAtiv').style.display = linhas.length>=MAX_ATIVS ? 'none' : 'block';
+  $('btnAddAtiv').textContent = `+ Adicionar anexo na projeção (${linhas.length}/${MAX_ATIVS})`;
+  document.querySelectorAll('.ativValor').forEach(i=> i.addEventListener('blur', fmtMoneyBlur));
   updRbt();
 }
 function lerAtividadesDOM(){
   return [...document.querySelectorAll('.ativSel')].map(sel=>{
     const ai = sel.getAttribute('data-a');
-    return {
-      tipo: sel.value,
-      rbt: [...document.querySelectorAll(`.rbtm[data-a="${ai}"]`)].map(i=>i.value)
-    };
+    const inp = document.querySelector(`.ativValor[data-a="${ai}"]`);
+    return { tipo: sel.value, valor: inp ? inp.value : '' };
   });
 }
 function addAtividade(){
-  const dados = lerAtividadesDOM();
-  if(dados.length>=MAX_ATIVS) return;
-  // sugere um tipo diferente do(s) já usado(s)
-  const usados = dados.map(d=>d.tipo);
+  const linhas = lerAtividadesDOM();
+  if(linhas.length>=MAX_ATIVS) return;
+  const usados = linhas.map(l=>l.tipo);
   const sugestao = (TIPOS.find(([v])=>!usados.includes(v))||TIPOS[0])[0];
-  dados.push({tipo:sugestao, rbt:[]});
-  buildAtividades(dados);
+  linhas.push({tipo:sugestao, valor:''});
+  buildProjecao(linhas);
 }
 function rmAtividade(ai){
-  const dados = lerAtividadesDOM();
-  dados.splice(ai,1);
-  buildAtividades(dados);
+  const linhas = lerAtividadesDOM();
+  linhas.splice(ai,1);
+  buildProjecao(linhas);
 }
 function setAtivTipo(ai, tipo){
   const sel = document.querySelector(`.ativSel[data-a="${ai}"]`);
   if(sel){ sel.value = tipo; ativTipoChange(); }
 }
-/* RBT12 de uma atividade (com média formulada por atividade) */
-function rbt12DeAtiv(rbtArr){
-  const media = $('mediaFormulada') && $('mediaFormulada').checked;
-  let soma=0, preenchidos=0;
-  (rbtArr||[]).forEach(v=>{ const n=parseNum(v); soma+=n; if(n>0) preenchidos++; });
-  if(media && preenchidos>0) return (soma/preenchidos)*12;
-  return soma;
+/* resolve a projeção: devolve as parcelas por anexo e o global usado nas faixas */
+function getProjecao(){
+  const rbtGrade = getRbt12();
+  const linhas = lerAtividadesDOM();
+  const vals = linhas.map(l=> l.valor!=='' ? parseNum(l.valor) : null);
+  const somaOutras = vals.reduce((s,v,i)=> i===0 ? s : s+(v||0), 0);
+  const autoPrincipal = (vals[0]===null || vals[0]===undefined);
+  const v0 = autoPrincipal ? Math.max(0, rbtGrade - somaOutras) : (vals[0]||0);
+  const valores = [v0, ...vals.slice(1).map(v=>v||0)];
+  const soma = valores.reduce((s,v)=>s+v,0);
+  return {
+    linhas: linhas.map((l,i)=>({tipo:l.tipo, rbt12:valores[i], auto:(i===0&&autoPrincipal)})),
+    rbtGrade, soma, global: soma, diferenca: soma - rbtGrade
+  };
 }
-function getAtividades(){
-  return lerAtividadesDOM().map(a=>({tipo:a.tipo, rbt12: rbt12DeAtiv(a.rbt)}));
-}
-function getRbt12(){ return getAtividades().reduce((s,a)=>s+a.rbt12,0); }
-function updRbt(){
-  const ativs = lerAtividadesDOM();
-  const media = $('mediaFormulada') && $('mediaFormulada').checked;
-  const valores = ativs.map(a=>rbt12DeAtiv(a.rbt));
-  const global = valores.reduce((s,v)=>s+v,0);
-  // Fator R provisório (folha da seção 03) p/ decidir III×V no badge ao vivo
-  const massa = parseNum($('folha')?$('folha').value:0) + parseNum($('prolabore')?$('prolabore').value:0) + parseNum($('fgts')?$('fgts').value:0);
-  const fatorR = global>0 ? massa/global : 0;
-  ativs.forEach((a,ai)=>{
-    const el = $('ativTotal'+ai); if(el) el.textContent = fmt(valores[ai]);
-    const bx = $('ativAnexo'+ai);
-    if(bx){
-      if(global>0){
-        // faixa e alíquota efetiva calculadas pela RBT12 GLOBAL (soma de todas as atividades)
-        const anexo = escolherAnexo(a.tipo, fatorR);
-        const fx = faixaSimples(anexo, global);
-        let ef = (global*fx.aliq - fx.pd)/global; if(ef<0) ef=0;
-        bx.textContent = `Anexo ${anexo} · ${fx.idx+1}ª faixa · efet. ${pct(ef*100)}`;
-        bx.title = `Faixa e alíquota definidas pela soma global de ${fmt(global)} (art. 18 §4º, LC 123)`;
-      } else {
-        bx.textContent = anexoCurto(a.tipo); bx.title='';
-      }
-    }
-  });
-  // total de cada mês (soma dos anexos na mesma linha)
-  for(let mi=0; mi<12; mi++){
-    const tEl = $('mesTotal'+mi);
-    if(tEl){
-      let s=0; document.querySelectorAll(`.rbtm[data-i="${mi}"]`).forEach(i=>{ s+=parseNum(i.value); });
-      tEl.textContent = s>0 ? fmt(s) : '—';
-    }
-  }
-  const mg = $('matrizGlobal'); if(mg) mg.textContent = fmt(global);
-  if($('rbtTotalLabel')) $('rbtTotalLabel').textContent = media ? 'RBT12 global projetado (média × 12)' : 'RBT12 global (soma das atividades)';
-  $('rbtTotal').textContent = fmt(global);
-  syncAnexoInfo();
-}
+function getAtividades(){ return getProjecao().linhas.map(l=>({tipo:l.tipo, rbt12:l.rbt12})); }
 function ativTipoChange(){ updRbt(); }
 function syncAnexoInfo(){
   const tipos = lerAtividadesDOM().map(a=>a.tipo);
@@ -935,23 +903,45 @@ function syncAnexoInfo(){
   const fatorR = tipos.some(t=>t==='servico_iii'||t==='servico_v');
   $('anexoInfo').value = anexos.join(' + ') + (fatorR?' (Fator R decide III ou V)':'');
 }
-function preencherIgualA(ai){
-  const cells = [...document.querySelectorAll(`.rbtm[data-a="${ai}"]`)];
-  if(!cells.length) return;
-  const first = cells[0].value;
-  cells.forEach(i=> i.value=first);
-  updRbt();
-}
-function zerarA(ai){
-  document.querySelectorAll(`.rbtm[data-a="${ai}"]`).forEach(i=> i.value='');
-  updRbt();
-}
-function distribuirA(ai){
-  const inp = document.querySelector(`.fatAnualA[data-a="${ai}"]`);
-  const anual = parseNum(inp ? inp.value : 0);
-  const m = anual/12;
-  document.querySelectorAll(`.rbtm[data-a="${ai}"]`).forEach(i=> i.value = m ? m.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '');
-  updRbt();
+function updRbt(){
+  const media = $('mediaFormulada') && $('mediaFormulada').checked;
+  const p = getProjecao();
+  const global = p.global>0 ? p.global : p.rbtGrade;
+  // Fator R provisório (folha da seção 03) p/ decidir III×V no badge ao vivo
+  const massa = parseNum($('folha')?$('folha').value:0) + parseNum($('prolabore')?$('prolabore').value:0) + parseNum($('fgts')?$('fgts').value:0);
+  const fatorR = global>0 ? massa/global : 0;
+  p.linhas.forEach((l,ai)=>{
+    const bx = $('ativAnexo'+ai);
+    if(bx){
+      if(global>0){
+        // faixa e alíquota efetiva calculadas pela RBT12 GLOBAL (soma das parcelas)
+        const anexo = escolherAnexo(l.tipo, fatorR);
+        const fx = faixaSimples(anexo, global);
+        let ef = (global*fx.aliq - fx.pd)/global; if(ef<0) ef=0;
+        bx.textContent = `Anexo ${anexo} · ${fx.idx+1}ª faixa · efet. ${pct(ef*100)}`;
+        bx.title = `Faixa e alíquota definidas pela soma global de ${fmt(global)} (art. 18 §4º, LC 123)`;
+      } else {
+        bx.textContent = anexoCurto(l.tipo); bx.title='';
+      }
+    }
+    const pcEl = $('ativPc'+ai);
+    if(pcEl) pcEl.textContent = (global>0)
+      ? `${fmt(l.rbt12)}${l.auto?' (auto)':''} · ${pct(l.rbt12/global*100)}`
+      : '—';
+  });
+  // resumo da distribuição
+  const res = $('projResumo');
+  if(res){
+    if(p.rbtGrade<=0 && p.soma<=0){ res.innerHTML=''; }
+    else if(p.linhas[0].auto || Math.abs(p.diferenca)<=0.01){
+      res.innerHTML = `<span style="color:var(--green-deep)">✓ Projeção fechada: ${fmt(p.soma)} distribuídos em ${p.linhas.length} anexo(s) — o estudo parte deste total.</span>`;
+    } else {
+      res.innerHTML = `<span style="color:var(--red)">⚠ A projeção soma ${fmt(p.soma)}, mas o RBT12 dos meses é ${fmt(p.rbtGrade)} (diferença ${fmt(p.diferenca)}). Deixe o valor do anexo 1 vazio para completar automaticamente — ou o estudo usará a soma da projeção.</span>`;
+    }
+  }
+  if($('rbtTotalLabel')) $('rbtTotalLabel').textContent = media ? 'RBT12 global projetado (média × 12)' : 'RBT12 global (soma dos meses)';
+  $('rbtTotal').textContent = fmt(p.rbtGrade);
+  syncAnexoInfo();
 }
 /* formata campos de dinheiro ao sair */
 function fmtMoneyBlur(e){
@@ -2100,7 +2090,8 @@ function coletarFormulario(){
   const ativs = lerAtividadesDOM();
   const f = {
     empNome:$('empNome').value, empCnpj:$('empCnpj').value, empCnae:$('empCnae').value,
-    atividades:ativs,                      // formato novo: [{tipo, rbt:[12]}]
+    rbt:[...document.querySelectorAll('.rbtm')].map(i=>i.value),   // grade global de 12 meses
+    atividades:ativs,                      // projeção: [{tipo, valor}] (valor '' na linha 1 = automático)
     atividade:ativs[0]?ativs[0].tipo:'comercio',   // compat com versões antigas
     meses:$('meses').value,
     mediaFormulada:$('mediaFormulada').checked,
@@ -2116,11 +2107,26 @@ function coletarFormulario(){
 function aplicarFormulario(f){
   if(!f) return;
   $('empNome').value=f.empNome||''; $('empCnpj').value=f.empCnpj||''; $('empCnae').value=f.empCnae||'';
-  // formato novo (atividades[]) ou migração do antigo (atividade única + rbt[])
-  const dados = (f.atividades && f.atividades.length)
-    ? f.atividades
-    : [{tipo: f.atividade||'comercio', rbt: f.rbt||[]}];
-  buildAtividades(dados);
+  const brl = v => v ? v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '';
+  // 3 formatos: novo {rbt[12 global], atividades:[{tipo,valor}]} · matriz {atividades:[{tipo,rbt[12]}]} · antigo {atividade, rbt[12]}
+  let mesesGrade = [], linhas = [];
+  if(f.atividades && f.atividades.length && f.atividades[0] && f.atividades[0].rbt){
+    // formato matriz → grade = soma dos meses; parcelas = total por atividade
+    for(let m=0;m<12;m++){
+      let s=0; f.atividades.forEach(a=>{ s+=parseNum((a.rbt||[])[m]); });
+      mesesGrade[m] = brl(s);
+    }
+    linhas = f.atividades.map(a=>({tipo:a.tipo, valor: brl((a.rbt||[]).reduce((s,v)=>s+parseNum(v),0))}));
+    if(linhas.length===1) linhas[0].valor='';   // atividade única → automático
+  } else if(f.atividades && f.atividades.length){
+    mesesGrade = f.rbt||[];
+    linhas = f.atividades.map(a=>({tipo:a.tipo, valor:(a.valor!=null?a.valor:'')}));
+  } else {
+    mesesGrade = f.rbt||[];
+    linhas = [{tipo: f.atividade||'comercio', valor:''}];
+  }
+  document.querySelectorAll('.rbtm').forEach((c,i)=>{ c.value = mesesGrade[i]||''; });
+  buildProjecao(linhas);
   if(f.meses) $('meses').value=f.meses;
   $('mediaFormulada').checked=!!f.mediaFormulada;
   $('folha').value=f.folha||''; $('prolabore').value=f.prolabore||''; $('fgts').value=f.fgts||'';
@@ -2241,7 +2247,8 @@ function importBiblioteca(input){
    ============================================================ */
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') fecharGaleria(); });
 hidratarIcones();
-buildAtividades([{tipo:'comercio', rbt:[]}]);
+buildRbt();
+buildProjecao([{tipo:'comercio', valor:''}]);
 document.querySelectorAll('input.money').forEach(i=> i.addEventListener('blur', fmtMoneyBlur));
 estudosCache = supa ? [] : lerEstudos();
 atualizarGaleriaCount();
