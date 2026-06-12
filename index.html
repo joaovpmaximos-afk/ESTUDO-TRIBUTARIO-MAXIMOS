@@ -564,7 +564,7 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
     <div class="sec-tag"><b>04</b>Parâmetros</div>
     <div class="sec-body">
       <h2 class="sec-title">Custos, despesas e alíquotas</h2>
-      <p class="sec-sub">Valores <b>anuais</b>, sem folha/encargos. Afetam os créditos do Lucro Real, o ICMS por valor agregado e o lucro tributável.</p>
+      <p class="sec-sub">Valores <b>anuais</b>, sem folha/encargos. Afetam os créditos de PIS/COFINS do Lucro Real e o lucro tributável. Compra e venda de mercadorias (ICMS) têm a seção própria, logo abaixo.</p>
       <div class="grid g4">
         <div>
           <label>Custos / CMV anual <span class="q">(sem folha)</span></label>
@@ -583,11 +583,7 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
           <input class="money" id="lucroReal" placeholder="auto: receita − custos − tributos">
         </div>
       </div>
-      <div class="grid g4" style="margin-top:16px">
-        <div>
-          <label>Alíquota ICMS venda (%) <span class="q">(comércio/ind./transporte)</span></label>
-          <input class="perc" id="aliqIcms" placeholder="0">
-        </div>
+      <div class="grid g2" style="margin-top:16px">
         <div>
           <label>Alíquota ISS (%) <span class="q">(serviços · mínimo legal 2%)</span></label>
           <input class="perc" id="aliqIss" value="2" placeholder="2">
@@ -596,27 +592,8 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
           <label>Alíquota IPI (%) <span class="q">(indústria)</span></label>
           <input class="perc" id="aliqIpi" placeholder="0">
         </div>
-        <div>
-          <label>% das compras com crédito de ICMS <span class="q">(se não usar os campos abaixo)</span></label>
-          <input class="perc" id="pctCredIcms" placeholder="0" value="0">
-        </div>
-      </div>
-      <div class="grid g3" style="margin-top:16px">
-        <div>
-          <label>Venda de mercadorias anual <span class="q">(base do débito de ICMS — Presumido/Real)</span></label>
-          <input class="money" id="vendaMerc" placeholder="auto: receita de comércio/ind./transp.">
-        </div>
-        <div>
-          <label>Compra de mercadorias anual <span class="q">(base do crédito de ICMS)</span></label>
-          <input class="money" id="compraMerc" placeholder="padrão: custos × % crédito">
-        </div>
-        <div>
-          <label>Alíquota ICMS compra (%)</label>
-          <input class="perc" id="aliqIcmsCompra" placeholder="vazio = alíq. de venda">
-        </div>
       </div>
       <p class="note" style="margin-top:16px">
-        <b>ICMS no Presumido/Real</b> apurado como débito × crédito: <b>venda de mercadorias × alíquota de venda − compra de mercadorias × alíquota de compra</b> (nunca negativo). Campos de venda/compra vazios: o sistema usa a receita de comércio/indústria/transporte como venda e os custos × "% das compras com crédito" como crédito.<br>
         <b>PIS/COFINS no Lucro Real</b>: o crédito incide sobre insumos e despesas elegíveis (mercadoria, matéria-prima, energia, aluguel PJ, frete). Informe no campo próprio; vazio, o sistema usa os Custos como aproximação.<br>
         <b>Lucro Real</b>: se o LAIR ficar vazio, o lucro tributável é calculado como receita − custos − despesas − folha − encargos − tributos sobre a receita (PIS, COFINS, ICMS, ISS).
       </p>
@@ -626,13 +603,49 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
           <span><b>Empresa tem liminar suspendendo a LC 224/2025</b> — marque para não aplicar o acréscimo de +10% na presunção do Lucro Presumido (faturamento anual &gt; R$ 5 milhões, vigente em 2026).</span>
         </label>
       </div>
+    </div>
+  </section>
+
+  <!-- ===== 05 MERCADORIAS / ICMS ===== -->
+  <section class="sec sec-form">
+    <div class="sec-tag"><b>05</b>Mercadorias</div>
+    <div class="sec-body">
+      <h2 class="sec-title">Compra e venda de mercadorias — ICMS</h2>
+      <p class="sec-sub">Apuração do ICMS no <b>Lucro Presumido e no Lucro Real</b>, como na prática: <b>débito</b> sobre a venda de mercadorias e <b>crédito</b> sobre a compra, cada um com sua alíquota. Também vale para a parcela fora do DAS quando o RBT12 passa do sublimite de R$ 3,6 mi.</p>
+      <div class="grid g4">
+        <div>
+          <label>Venda de mercadorias anual <span class="q">(base do débito)</span></label>
+          <input class="money" id="vendaMerc" placeholder="auto: receita com./ind./transp.">
+        </div>
+        <div>
+          <label>Alíquota ICMS venda (%)</label>
+          <input class="perc" id="aliqIcms" placeholder="0">
+        </div>
+        <div>
+          <label>Compra de mercadorias anual <span class="q">(base do crédito)</span></label>
+          <input class="money" id="compraMerc" placeholder="padrão: custos × % crédito">
+        </div>
+        <div>
+          <label>Alíquota ICMS compra (%)</label>
+          <input class="perc" id="aliqIcmsCompra" placeholder="vazio = alíq. de venda">
+        </div>
+      </div>
+      <div class="grid g4" style="margin-top:16px">
+        <div>
+          <label>% das compras com crédito de ICMS <span class="q">(modo automático)</span></label>
+          <input class="perc" id="pctCredIcms" placeholder="0" value="0">
+        </div>
+      </div>
+      <p class="note" style="margin-top:16px">
+        <b>ICMS = venda × alíquota de venda − compra × alíquota de compra</b> (nunca negativo). Deixando venda/compra vazios, o sistema usa a receita de comércio/indústria/transporte como venda e os <b>Custos × "% das compras com crédito"</b> como crédito — comportamento dos estudos antigos.
+      </p>
       <button class="cta btn" onclick="calcular()">Calcular estudo tributário <span class="ic" data-ic="arrow"></span></button>
     </div>
   </section>
 
   <!-- ===== 05 RESULTADO ===== -->
   <section class="sec" id="resultsCard" style="display:none">
-    <div class="sec-tag"><b>05</b>Resultado</div>
+    <div class="sec-tag"><b>06</b>Resultado</div>
     <div class="sec-body">
       <div id="verdict"></div>
       <div id="resultWarnings"></div>
