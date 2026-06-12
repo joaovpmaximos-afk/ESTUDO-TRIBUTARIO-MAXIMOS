@@ -152,7 +152,20 @@ input.money,input.perc{font-family:var(--fm); text-align:right; font-variant-num
 
 /* ===== projeção por anexo (divide o RBT12 entre as atividades) ===== */
 .proj-title{font-family:var(--fd); font-weight:600; font-size:17px; margin:30px 0 4px; padding-top:22px; border-top:1px solid var(--hair)}
-.proj-row{display:flex; gap:10px; align-items:center; padding:10px 13px; border:1px solid var(--hair2); border-radius:12px; background:var(--surface); margin-bottom:9px; flex-wrap:wrap}
+.proj-item{margin-bottom:9px}
+.proj-row{display:flex; gap:10px; align-items:center; padding:10px 13px; border:1px solid var(--hair2); border-radius:12px; background:var(--surface); flex-wrap:wrap}
+.proj-cal{
+  flex:none; display:inline-flex; align-items:center; gap:6px;
+  border:1px solid var(--hair2); background:var(--surface); color:var(--muted);
+  border-radius:8px; padding:7px 10px; font-size:11.5px; font-weight:600; font-family:var(--fu);
+  cursor:pointer; transition:.15s; white-space:nowrap;
+}
+.proj-cal:hover{border-color:var(--green); color:var(--green-deep)}
+.proj-cal.on{background:var(--green-soft); border-color:#bfe6cb; color:var(--green-deep)}
+.proj-meses{margin-top:6px; padding:13px 14px 9px; border:1px dashed var(--hair2); border-radius:12px; background:var(--paper)}
+.proj-meses .rbt-cell{background:var(--surface)}
+.proj-meses-tools{display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:9px}
+.ativValor[readonly]{background:var(--green-soft); color:var(--green-ink); border-style:solid; font-weight:600}
 .proj-num{flex:none; font-family:var(--fm); font-size:10px; color:var(--faint); width:14px; text-align:center}
 .proj-row select{flex:2; min-width:230px; font-size:12.5px; padding:8px 9px}
 .proj-row .ativValor{flex:1; min-width:150px; max-width:215px}
@@ -704,7 +717,8 @@ const IC = {
   out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
   refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
   play:'<polygon points="5 3 19 12 5 21 5 3"/>',
-  open:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 10 12 5 7 10"/><line x1="12" y1="5" x2="12" y2="17"/>'
+  open:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 10 12 5 7 10"/><line x1="12" y1="5" x2="12" y2="17"/>',
+  cal:'<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'
 };
 function ic(n,s){ s=s||15; return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[n]||''}</svg>`; }
 function hidratarIcones(){ document.querySelectorAll('[data-ic]').forEach(el=>{ el.innerHTML = ic(el.getAttribute('data-ic')); }); }
@@ -815,13 +829,15 @@ function buildRbt(){
   $('rbtBody').innerHTML = MESES_NOMES.map((m,i)=>
     `<div class="rbt-cell"><em>${m}</em><input class="rbtm" data-i="${i}" placeholder="0,00" inputmode="decimal" oninput="updRbt()"></div>`).join('');
 }
-function getRbt12(){
+/* soma uma grade de 12 meses (com média formulada: média dos preenchidos × 12) */
+function somaGrade(vals){
   let soma=0, preenchidos=0;
-  document.querySelectorAll('.rbtm').forEach(inp=>{ const v=parseNum(inp.value); soma+=v; if(v>0) preenchidos++; });
+  (vals||[]).forEach(v=>{ const n=parseNum(v); soma+=n; if(n>0) preenchidos++; });
   const media = $('mediaFormulada') && $('mediaFormulada').checked;
-  if(media && preenchidos>0) return (soma/preenchidos)*12;   // média formulada: (média dos meses preenchidos) × 12
+  if(media && preenchidos>0) return (soma/preenchidos)*12;
   return soma;
 }
+function getRbt12(){ return somaGrade([...document.querySelectorAll('.rbtm')].map(i=>i.value)); }
 function preencherIgual(){
   const first = document.querySelector('.rbtm[data-i="0"]').value;
   document.querySelectorAll('.rbtm').forEach(inp=> inp.value=first);
@@ -838,17 +854,31 @@ function distribuir(){
 /* --- projeção por anexo: divide o RBT12 entre até 4 atividades.
        Linha 1 vazia = completa automaticamente o restante do RBT12. --- */
 function buildProjecao(linhas){
-  if(!linhas || !linhas.length) linhas = [{tipo:'comercio', valor:''}];
+  if(!linhas || !linhas.length) linhas = [{tipo:'comercio', valor:'', rbtm:[]}];
   linhas = linhas.slice(0, MAX_ATIVS);
   $('ativBlocos').innerHTML = linhas.map((a,ai)=>{
     const opts = TIPOS.map(([v,l])=>`<option value="${v}"${v===a.tipo?' selected':''}>${l}</option>`).join('');
-    return `<div class="proj-row">
-      <span class="proj-num">${ai+1}</span>
-      <select class="ativSel" data-a="${ai}" onchange="ativTipoChange()">${opts}</select>
-      <input class="money ativValor" data-a="${ai}" placeholder="${ai===0?'automático = restante do RBT12':'0,00'}" inputmode="decimal" oninput="updRbt()" value="${a.valor?String(a.valor).replace(/"/g,'&quot;'):''}">
-      <span class="m-badge" id="ativAnexo${ai}">—</span>
-      <span class="proj-pc" id="ativPc${ai}">—</span>
-      ${ai>0?`<button class="m-rm" onclick="rmAtividade(${ai})" title="Remover este anexo da projeção">✕</button>`:''}
+    const temMeses = (a.rbtm||[]).some(v=>parseNum(v)>0);
+    const cels = MESES_NOMES.map((m,mi)=>
+      `<div class="rbt-cell"><em>${m}</em><input class="projm" data-a="${ai}" data-i="${mi}" placeholder="0,00" inputmode="decimal" oninput="updRbt()" value="${(a.rbtm&&a.rbtm[mi])?String(a.rbtm[mi]).replace(/"/g,'&quot;'):''}"></div>`).join('');
+    return `<div class="proj-item" data-a="${ai}">
+      <div class="proj-row">
+        <span class="proj-num">${ai+1}</span>
+        <select class="ativSel" data-a="${ai}" onchange="ativTipoChange()">${opts}</select>
+        <input class="money ativValor" data-a="${ai}" placeholder="${ai===0?'automático = restante do RBT12':'0,00'}" inputmode="decimal" oninput="updRbt()" value="${a.valor?String(a.valor).replace(/"/g,'&quot;'):''}">
+        <button class="proj-cal${temMeses?' on':''}" onclick="toggleMeses(${ai})" title="Lançar os 12 meses deste anexo">${ic('cal',13)} 12 meses</button>
+        <span class="m-badge" id="ativAnexo${ai}">—</span>
+        <span class="proj-pc" id="ativPc${ai}">—</span>
+        ${ai>0?`<button class="m-rm" onclick="rmAtividade(${ai})" title="Remover este anexo da projeção">✕</button>`:''}
+      </div>
+      <div class="proj-meses" id="projMeses${ai}" style="display:${temMeses?'block':'none'}">
+        <div class="rbt-grid">${cels}</div>
+        <div class="proj-meses-tools">
+          <button class="btn btn-text" onclick="repetirMesA(${ai})">↺ Repetir o 1º mês</button>
+          <button class="btn btn-text" onclick="zerarMesesA(${ai})">✕ Zerar meses</button>
+          <span style="font-size:11px;color:var(--faint)">Com meses preenchidos, o valor anual do anexo vira a soma deles automaticamente.</span>
+        </div>
+      </div>
     </div>`;
   }).join('');
   $('btnAddAtiv').style.display = linhas.length>=MAX_ATIVS ? 'none' : 'block';
@@ -860,8 +890,28 @@ function lerAtividadesDOM(){
   return [...document.querySelectorAll('.ativSel')].map(sel=>{
     const ai = sel.getAttribute('data-a');
     const inp = document.querySelector(`.ativValor[data-a="${ai}"]`);
-    return { tipo: sel.value, valor: inp ? inp.value : '' };
+    return {
+      tipo: sel.value,
+      valor: inp ? inp.value : '',
+      rbtm: [...document.querySelectorAll(`.projm[data-a="${ai}"]`)].map(i=>i.value)
+    };
   });
+}
+function toggleMeses(ai){
+  const el = $('projMeses'+ai);
+  if(!el) return;
+  el.style.display = (el.style.display==='none') ? 'block' : 'none';
+}
+function repetirMesA(ai){
+  const cels = [...document.querySelectorAll(`.projm[data-a="${ai}"]`)];
+  if(!cels.length) return;
+  const first = cels[0].value;
+  cels.forEach(i=> i.value=first);
+  updRbt();
+}
+function zerarMesesA(ai){
+  document.querySelectorAll(`.projm[data-a="${ai}"]`).forEach(i=> i.value='');
+  updRbt();
 }
 function addAtividade(){
   const linhas = lerAtividadesDOM();
@@ -884,14 +934,16 @@ function setAtivTipo(ai, tipo){
 function getProjecao(){
   const rbtGrade = getRbt12();
   const linhas = lerAtividadesDOM();
-  const vals = linhas.map(l=> l.valor!=='' ? parseNum(l.valor) : null);
+  // valor de cada anexo: meses lançados (se houver) > valor anual digitado > automático (linha 1)
+  const porMeses = linhas.map(l=> somaGrade(l.rbtm));
+  const vals = linhas.map((l,i)=> porMeses[i]>0 ? porMeses[i] : (l.valor!=='' ? parseNum(l.valor) : null));
   const somaOutras = vals.reduce((s,v,i)=> i===0 ? s : s+(v||0), 0);
   const autoPrincipal = (vals[0]===null || vals[0]===undefined);
   const v0 = autoPrincipal ? Math.max(0, rbtGrade - somaOutras) : (vals[0]||0);
   const valores = [v0, ...vals.slice(1).map(v=>v||0)];
   const soma = valores.reduce((s,v)=>s+v,0);
   return {
-    linhas: linhas.map((l,i)=>({tipo:l.tipo, rbt12:valores[i], auto:(i===0&&autoPrincipal)})),
+    linhas: linhas.map((l,i)=>({tipo:l.tipo, rbt12:valores[i], auto:(i===0&&autoPrincipal), porMeses:porMeses[i]>0})),
     rbtGrade, soma, global: soma, diferenca: soma - rbtGrade
   };
 }
@@ -926,8 +978,21 @@ function updRbt(){
     }
     const pcEl = $('ativPc'+ai);
     if(pcEl) pcEl.textContent = (global>0)
-      ? `${fmt(l.rbt12)}${l.auto?' (auto)':''} · ${pct(l.rbt12/global*100)}`
+      ? `${fmt(l.rbt12)}${l.auto?' (auto)':(l.porMeses?' (12 meses)':'')} · ${pct(l.rbt12/global*100)}`
       : '—';
+    // meses lançados mandam no valor anual do anexo: campo vira soma (somente leitura)
+    const inpV = document.querySelector(`.ativValor[data-a="${ai}"]`);
+    if(inpV){
+      if(l.porMeses){
+        inpV.value = l.rbt12.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+        inpV.readOnly = true;
+        inpV.title = 'Somando os 12 meses lançados abaixo — zere os meses para digitar direto.';
+      } else if(inpV.readOnly){
+        inpV.readOnly = false; inpV.title=''; inpV.value='';
+      }
+    }
+    const cal = document.querySelector(`.proj-item[data-a="${ai}"] .proj-cal`);
+    if(cal) cal.classList.toggle('on', l.porMeses);
   });
   // resumo da distribuição
   const res = $('projResumo');
@@ -2111,19 +2176,18 @@ function aplicarFormulario(f){
   // 3 formatos: novo {rbt[12 global], atividades:[{tipo,valor}]} · matriz {atividades:[{tipo,rbt[12]}]} · antigo {atividade, rbt[12]}
   let mesesGrade = [], linhas = [];
   if(f.atividades && f.atividades.length && f.atividades[0] && f.atividades[0].rbt){
-    // formato matriz → grade = soma dos meses; parcelas = total por atividade
+    // formato matriz → grade global = soma dos meses; cada anexo leva seus meses p/ a projeção
     for(let m=0;m<12;m++){
       let s=0; f.atividades.forEach(a=>{ s+=parseNum((a.rbt||[])[m]); });
       mesesGrade[m] = brl(s);
     }
-    linhas = f.atividades.map(a=>({tipo:a.tipo, valor: brl((a.rbt||[]).reduce((s,v)=>s+parseNum(v),0))}));
-    if(linhas.length===1) linhas[0].valor='';   // atividade única → automático
+    linhas = f.atividades.map(a=>({tipo:a.tipo, valor:'', rbtm:(a.rbt||[])}));
   } else if(f.atividades && f.atividades.length){
     mesesGrade = f.rbt||[];
-    linhas = f.atividades.map(a=>({tipo:a.tipo, valor:(a.valor!=null?a.valor:'')}));
+    linhas = f.atividades.map(a=>({tipo:a.tipo, valor:(a.valor!=null?a.valor:''), rbtm:(a.rbtm||[])}));
   } else {
     mesesGrade = f.rbt||[];
-    linhas = [{tipo: f.atividade||'comercio', valor:''}];
+    linhas = [{tipo: f.atividade||'comercio', valor:'', rbtm:[]}];
   }
   document.querySelectorAll('.rbtm').forEach((c,i)=>{ c.value = mesesGrade[i]||''; });
   buildProjecao(linhas);
