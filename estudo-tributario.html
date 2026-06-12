@@ -149,6 +149,23 @@ input.money,input.perc{font-family:var(--fm); text-align:right; font-variant-num
 .rbt-tools{display:flex; align-items:end; gap:10px; flex-wrap:wrap; margin-top:16px}
 .rbt-tools .fill{flex:1; min-width:230px}
 
+/* ===== blocos de atividade (receitas segregadas) ===== */
+.ativ-bloco{border:1px solid var(--hair2); border-radius:13px; background:var(--surface); padding:14px 16px 15px; margin-bottom:14px}
+.ativ-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px}
+.ativ-num{font-family:var(--fm); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); flex:none}
+.ativ-head select{flex:1; min-width:240px}
+.ativ-head .ativ-total{font-family:var(--fm); font-weight:600; font-size:14.5px; font-variant-numeric:tabular-nums; margin-left:auto; white-space:nowrap}
+.ativ-head .ativ-anexo{font-family:var(--fm); font-size:10px; color:var(--green-deep); background:var(--green-soft); border:1px solid #bfe6cb; border-radius:20px; padding:3px 9px; white-space:nowrap}
+.ativ-rm{flex:none; border:1px solid var(--hair2); background:var(--surface); color:var(--muted); border-radius:8px; width:30px; height:30px; cursor:pointer; font-size:14px; line-height:1; transition:.15s}
+.ativ-rm:hover{border-color:var(--red); color:var(--red)}
+.ativ-bloco .rbt-grid{gap:8px}
+.ativ-bloco .rbt-cell{background:var(--paper)}
+.ativ-tools{display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:10px}
+.ativ-tools .fld-join{margin-left:auto; max-width:280px}
+.ativ-tools .fld-join input{font-size:12.5px; padding:7px 10px}
+.btn-add-ativ{width:100%; border:1px dashed var(--hair2); background:transparent; color:var(--muted); border-radius:13px; padding:13px; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; margin-bottom:4px}
+.btn-add-ativ:hover{border-color:var(--green); color:var(--green-deep); background:var(--green-soft)}
+
 /* ===== switch ===== */
 .switch{display:flex; align-items:flex-start; gap:11px; cursor:pointer; font-weight:500; font-size:12.5px; color:var(--ink2); line-height:1.6}
 .switch input{position:absolute; opacity:0; width:0; height:0}
@@ -442,22 +459,9 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
           <input id="empCnae" placeholder="0000-0/00">
         </div>
       </div>
-      <div class="grid g3" style="margin-top:16px">
+      <div class="grid g2" style="margin-top:16px">
         <div>
-          <label>Atividade <span class="q">(define o anexo do Simples)</span></label>
-          <select id="atividade" onchange="atividadeChange()">
-            <option value="comercio">Comércio (revenda) — Anexo I</option>
-            <option value="industria">Indústria — Anexo II</option>
-            <option value="servico_iii_fixo">Serviços — Anexo III fixo (§5º-B: contabilidade, ensino, viagens, reparos…)</option>
-            <option value="servico_iii">Serviços — Anexo III ou V por Fator R (§5º-D)</option>
-            <option value="servico_iv">Serviços — Anexo IV (construção, advocacia, vigilância, limpeza)</option>
-            <option value="servico_v">Serviços — Anexo V (intelectual, com Fator R)</option>
-            <option value="transporte_carga">Transporte de cargas — Anexo III (ICMS)</option>
-            <option value="transporte_pass">Transporte de passageiros — Anexo III</option>
-          </select>
-        </div>
-        <div>
-          <label>Enquadramento no Simples</label>
+          <label>Enquadramento no Simples <span class="q">(definido pelas atividades da seção 02)</span></label>
           <input id="anexoInfo" readonly value="—">
         </div>
         <div>
@@ -477,30 +481,20 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
   <section class="sec sec-form">
     <div class="sec-tag"><b>02</b>Receita</div>
     <div class="sec-body">
-      <h2 class="sec-title">RBT12 — receita bruta dos últimos 12 meses</h2>
-      <p class="sec-sub">A soma define a faixa e a alíquota efetiva do Simples e serve de base de receita para os três regimes. Tudo editável.</p>
-      <div class="rbt-grid" id="rbtBody"></div>
+      <h2 class="sec-title">RBT12 — receita bruta dos últimos 12 meses, por atividade</h2>
+      <p class="sec-sub">Empresas com atividades mistas: separe a receita de cada atividade (até 4 — comércio, indústria, transporte, serviços). Cada receita é tributada pelo anexo correspondente, mas a alíquota efetiva é definida pelo <b>RBT12 global</b> (soma de tudo), como manda o art. 18 da LC 123.</p>
+      <div id="ativBlocos"></div>
+      <button class="btn-add-ativ" id="btnAddAtiv" onclick="addAtividade()">+ Adicionar atividade (até 4)</button>
       <div class="rbt-total">
-        <span class="lbl" id="rbtTotalLabel">RBT12 (total)</span>
+        <span class="lbl" id="rbtTotalLabel">RBT12 global (total)</span>
         <span class="val num" id="rbtTotal">R$ 0,00</span>
       </div>
       <div class="note blue" style="margin-top:18px">
         <label class="switch">
           <input type="checkbox" id="mediaFormulada" onchange="updRbt()">
           <span class="tk"></span>
-          <span><b>Início de atividade — usar média formulada.</b> Sem 12 meses completos, o RBT12 é projetado: <b>(média dos meses preenchidos) × 12</b> — proporcionalização do art. 18 da LC 123. Desmarcado, soma os meses normalmente.</span>
+          <span><b>Início de atividade — usar média formulada.</b> Sem 12 meses completos, o RBT12 é projetado por atividade: <b>(média dos meses preenchidos) × 12</b> — proporcionalização do art. 18 da LC 123. Desmarcado, soma os meses normalmente.</span>
         </label>
-      </div>
-      <div class="rbt-tools">
-        <button class="btn btn-text" onclick="preencherIgual()"><span class="ic" data-ic="refresh"></span> Repetir o 1º mês em todos</button>
-        <button class="btn btn-text" onclick="zerarRbt()"><span class="ic" data-ic="x"></span> Zerar</button>
-        <div class="fill">
-          <label>Ou informe o faturamento anual e distribua</label>
-          <div class="fld-join">
-            <input id="fatAnual" class="money" placeholder="Ex.: 1.200.000,00">
-            <button class="btn btn-ghost" onclick="distribuir()">Distribuir</button>
-          </div>
-        </div>
       </div>
     </div>
   </section>
@@ -772,37 +766,138 @@ function parseNum(str){
 const $ = id => document.getElementById(id);
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-/* ===== RBT12 ===== */
-function buildRbt(){
-  let html='';
-  for(let i=0;i<12;i++){
-    html += `<div class="rbt-cell"><em>${MESES_NOMES[i]}</em><input class="rbtm" data-i="${i}" placeholder="0,00" inputmode="decimal" oninput="updRbt()"></div>`;
-  }
-  $('rbtBody').innerHTML = html;
+/* ===== RBT12 por atividade (até 4 — empresas mistas, art. 18 §4º LC 123) ===== */
+const TIPOS = [
+  ['comercio','Comércio (revenda) — Anexo I'],
+  ['industria','Indústria — Anexo II'],
+  ['servico_iii_fixo','Serviços — Anexo III fixo (§5º-B: contabilidade, ensino, viagens, reparos…)'],
+  ['servico_iii','Serviços — Anexo III ou V por Fator R (§5º-D)'],
+  ['servico_iv','Serviços — Anexo IV (construção, advocacia, vigilância, limpeza)'],
+  ['servico_v','Serviços — Anexo V (intelectual, com Fator R)'],
+  ['transporte_carga','Transporte de cargas — Anexo III (ICMS)'],
+  ['transporte_pass','Transporte de passageiros — Anexo III']
+];
+const TIPO_CURTO = {
+  comercio:'Comércio', industria:'Indústria', servico_iii_fixo:'Serviços (§5º-B)',
+  servico_iii:'Serviços (Fator R)', servico_iv:'Serviços (Anexo IV)', servico_v:'Serviços (Anexo V)',
+  transporte_carga:'Transporte de cargas', transporte_pass:'Transporte de passageiros'
+};
+function anexoCurto(tipo){
+  if(tipo==='comercio') return 'Anexo I';
+  if(tipo==='industria') return 'Anexo II';
+  if(tipo==='servico_iv') return 'Anexo IV';
+  if(tipo==='servico_iii'||tipo==='servico_v') return 'Anexo III/V';
+  return 'Anexo III';
 }
-function getRbt12(){
-  let soma=0, preenchidos=0;
-  document.querySelectorAll('.rbtm').forEach(inp=>{ const v=parseNum(inp.value); soma+=v; if(v>0) preenchidos++; });
-  const media = $('mediaFormulada') && $('mediaFormulada').checked;
-  if(media && preenchidos>0) return (soma/preenchidos)*12;   // média formulada: (média dos meses preenchidos) × 12
-  return soma;
-}
-function updRbt(){
-  const media = $('mediaFormulada') && $('mediaFormulada').checked;
-  let preenchidos=0; document.querySelectorAll('.rbtm').forEach(inp=>{ if(parseNum(inp.value)>0) preenchidos++; });
-  if($('rbtTotalLabel')) $('rbtTotalLabel').textContent = media ? `RBT12 projetado (${preenchidos} mês(es) × média)` : 'RBT12 (total)';
-  $('rbtTotal').textContent = fmt(getRbt12());
-}
-function preencherIgual(){
-  const first = document.querySelector('.rbtm[data-i="0"]').value;
-  document.querySelectorAll('.rbtm').forEach(inp=> inp.value=first);
+const MAX_ATIVS = 4;
+
+function buildAtividades(dados){
+  // dados: [{tipo, rbt:[12 strings]}]
+  if(!dados || !dados.length) dados = [{tipo:'comercio', rbt:[]}];
+  dados = dados.slice(0, MAX_ATIVS);
+  $('ativBlocos').innerHTML = dados.map((a,ai)=>{
+    const opts = TIPOS.map(([v,l])=>`<option value="${v}"${v===a.tipo?' selected':''}>${l}</option>`).join('');
+    const cells = MESES_NOMES.map((m,i)=>
+      `<div class="rbt-cell"><em>${m}</em><input class="rbtm" data-a="${ai}" data-i="${i}" placeholder="0,00" inputmode="decimal" oninput="updRbt()" value="${(a.rbt&&a.rbt[i])?String(a.rbt[i]).replace(/"/g,'&quot;'):''}"></div>`).join('');
+    return `<div class="ativ-bloco" data-a="${ai}">
+      <div class="ativ-head">
+        <span class="ativ-num">Atividade ${ai+1}</span>
+        <select class="ativSel" data-a="${ai}" onchange="ativTipoChange()">${opts}</select>
+        <span class="ativ-anexo" id="ativAnexo${ai}">—</span>
+        <span class="ativ-total num" id="ativTotal${ai}">R$ 0,00</span>
+        ${ai>0?`<button class="ativ-rm" onclick="rmAtividade(${ai})" title="Remover atividade">✕</button>`:''}
+      </div>
+      <div class="rbt-grid">${cells}</div>
+      <div class="ativ-tools">
+        <button class="btn btn-text" onclick="preencherIgualA(${ai})"><span class="ic" data-ic="refresh"></span> Repetir 1º mês</button>
+        <button class="btn btn-text" onclick="zerarA(${ai})"><span class="ic" data-ic="x"></span> Zerar</button>
+        <div class="fld-join">
+          <input class="money fatAnualA" data-a="${ai}" placeholder="Anual p/ distribuir">
+          <button class="btn btn-ghost btn-sm" onclick="distribuirA(${ai})">Distribuir</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  $('btnAddAtiv').style.display = dados.length>=MAX_ATIVS ? 'none' : 'block';
+  hidratarIcones();
+  document.querySelectorAll('.fatAnualA').forEach(i=> i.addEventListener('blur', fmtMoneyBlur));
   updRbt();
 }
-function zerarRbt(){ document.querySelectorAll('.rbtm').forEach(inp=> inp.value=''); updRbt(); }
-function distribuir(){
-  const anual = parseNum($('fatAnual').value);
-  const m = (anual/12);
-  document.querySelectorAll('.rbtm').forEach(inp=> inp.value = m.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+function lerAtividadesDOM(){
+  return [...document.querySelectorAll('.ativ-bloco')].map(bl=>{
+    const ai = bl.getAttribute('data-a');
+    return {
+      tipo: bl.querySelector('.ativSel').value,
+      rbt: [...bl.querySelectorAll('.rbtm')].map(i=>i.value)
+    };
+  });
+}
+function addAtividade(){
+  const dados = lerAtividadesDOM();
+  if(dados.length>=MAX_ATIVS) return;
+  // sugere um tipo diferente do(s) já usado(s)
+  const usados = dados.map(d=>d.tipo);
+  const sugestao = (TIPOS.find(([v])=>!usados.includes(v))||TIPOS[0])[0];
+  dados.push({tipo:sugestao, rbt:[]});
+  buildAtividades(dados);
+}
+function rmAtividade(ai){
+  const dados = lerAtividadesDOM();
+  dados.splice(ai,1);
+  buildAtividades(dados);
+}
+function setAtivTipo(ai, tipo){
+  const sel = document.querySelector(`.ativSel[data-a="${ai}"]`);
+  if(sel){ sel.value = tipo; ativTipoChange(); }
+}
+/* RBT12 de uma atividade (com média formulada por atividade) */
+function rbt12DeAtiv(rbtArr){
+  const media = $('mediaFormulada') && $('mediaFormulada').checked;
+  let soma=0, preenchidos=0;
+  (rbtArr||[]).forEach(v=>{ const n=parseNum(v); soma+=n; if(n>0) preenchidos++; });
+  if(media && preenchidos>0) return (soma/preenchidos)*12;
+  return soma;
+}
+function getAtividades(){
+  return lerAtividadesDOM().map(a=>({tipo:a.tipo, rbt12: rbt12DeAtiv(a.rbt)}));
+}
+function getRbt12(){ return getAtividades().reduce((s,a)=>s+a.rbt12,0); }
+function updRbt(){
+  const ativs = lerAtividadesDOM();
+  const media = $('mediaFormulada') && $('mediaFormulada').checked;
+  let global = 0;
+  ativs.forEach((a,ai)=>{
+    const v = rbt12DeAtiv(a.rbt); global += v;
+    const el = $('ativTotal'+ai); if(el) el.textContent = fmt(v);
+    const bx = $('ativAnexo'+ai); if(bx) bx.textContent = anexoCurto(a.tipo);
+  });
+  if($('rbtTotalLabel')) $('rbtTotalLabel').textContent = media ? 'RBT12 global projetado (média × 12)' : 'RBT12 global (total)';
+  $('rbtTotal').textContent = fmt(global);
+  syncAnexoInfo();
+}
+function ativTipoChange(){ updRbt(); }
+function syncAnexoInfo(){
+  const tipos = lerAtividadesDOM().map(a=>a.tipo);
+  const anexos = [...new Set(tipos.map(anexoCurto))];
+  const fatorR = tipos.some(t=>t==='servico_iii'||t==='servico_v');
+  $('anexoInfo').value = anexos.join(' + ') + (fatorR?' (Fator R decide III ou V)':'');
+}
+function preencherIgualA(ai){
+  const cells = [...document.querySelectorAll(`.rbtm[data-a="${ai}"]`)];
+  if(!cells.length) return;
+  const first = cells[0].value;
+  cells.forEach(i=> i.value=first);
+  updRbt();
+}
+function zerarA(ai){
+  document.querySelectorAll(`.rbtm[data-a="${ai}"]`).forEach(i=> i.value='');
+  updRbt();
+}
+function distribuirA(ai){
+  const inp = document.querySelector(`.fatAnualA[data-a="${ai}"]`);
+  const anual = parseNum(inp ? inp.value : 0);
+  const m = anual/12;
+  document.querySelectorAll(`.rbtm[data-a="${ai}"]`).forEach(i=> i.value = m ? m.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '');
   updRbt();
 }
 /* formata campos de dinheiro ao sair */
@@ -926,9 +1021,9 @@ async function puxarCNPJ(){
     $('empCnpj').value = fmtCnpj(raw);
     if(d.razao_social) $('empNome').value = d.razao_social;
     if(d.cnae)  $('empCnae').value = fmtCnae(d.cnae);
-    // determina atividade/anexo pela CNAE (regra oficial LC 123 / CGSN 140)
+    // determina atividade/anexo pela CNAE (regra oficial LC 123 / CGSN 140) → Atividade 1
     const cls = cnaeParaAtividade(d.cnae);
-    $('atividade').value = cls.atividade; atividadeChange();
+    setAtivTipo(0, cls.atividade);
     // resumo
     const simples = d.simples===true ? '✅ Optante do Simples'
                   : d.simples===false ? '❌ NÃO optante do Simples'
@@ -953,18 +1048,6 @@ async function puxarCNPJ(){
   }finally{
     btn.disabled=false; btn.innerHTML=txt;
   }
-}
-
-function atividadeChange(){
-  const a = $('atividade').value;
-  let info='—';
-  if(a==='comercio') info='Anexo I (fixo)';
-  else if(a==='industria') info='Anexo II (fixo)';
-  else if(a==='servico_iii_fixo') info='Anexo III (fixo, §5º-B)';
-  else if(a==='servico_iii'||a==='servico_v') info='Anexo III ou V (pelo Fator R)';
-  else if(a==='servico_iv') info='Anexo IV (fixo)';
-  else if(a.startsWith('transporte')) info='Anexo III (ICMS no lugar do ISS)';
-  $('anexoInfo').value = info;
 }
 
 /* ===== seleciona anexo conforme atividade + Fator R ===== */
@@ -1004,12 +1087,14 @@ function faixaSimples(anexo, rbt12){
 let LAST = null; // último resultado p/ exportações
 
 function calcular(){
-  const rbt12 = getRbt12();
+  const atividades = getAtividades().filter(a=>a.rbt12>0 || true); // mantém todas; valida pelo global
+  const rbt12 = atividades.reduce((s,a)=>s+a.rbt12,0);
   if(rbt12<=0){ alert('Informe o faturamento no RBT12 antes de calcular.'); return; }
   const inp = {
+    atividades,
     rbt12,
     meses: parseInt($('meses').value),
-    atividade: $('atividade').value,
+    atividade: atividades[0].tipo,
     folha: parseNum($('folha').value),
     prolabore: parseNum($('prolabore').value),
     fgts: parseNum($('fgts').value),
@@ -1030,25 +1115,36 @@ function calcular(){
 }
 
 function engine(inp){
-  const { rbt12, meses, atividade, folha, prolabore, fgts, custos, despesas,
+  const { meses, folha, prolabore, fgts, custos, despesas,
           aliqIcms, aliqIss, aliqIpi, pctCredIcms, inssPatronal,
           lucroRealInput, lc224Liminar, insumosCredPC } = inp;
 
+  /* atividades: [{tipo, rbt12}] (até 4 — empresas mistas, art. 18 §4º).
+     Retrocompatível: aceita também {atividade, rbt12} no formato antigo. */
+  const ativs = (inp.atividades && inp.atividades.length)
+    ? inp.atividades.slice(0,4).map(a=>({tipo:a.tipo, rbt12:Number(a.rbt12)||0}))
+    : [{tipo: inp.atividade||'comercio', rbt12: Number(inp.rbt12)||0}];
+  const rbt12 = ativs.reduce((s,a)=>s+a.rbt12,0);
+  const multi = ativs.length>1;
+
   const f = (meses||12)/12;            // fator do período
-  const receita = rbt12 * f;           // receita do período analisado
+  const receita = rbt12 * f;           // receita global do período
   const folhaPer = folha*f, proPer = prolabore*f, fgtsPer = fgts*f;
   const custosPer = custos*f, despPer = despesas*f;
   const insumosPer = (insumosCredPC!=null) ? insumosCredPC*f : null;
   const limiteAdic = 20000*(meses||12); // adicional de IRPJ: 10% sobre o lucro/base > R$ 20 mil/mês
 
-  const ehServISS = atividade.startsWith('servico');                 // serviços sujeitos a ISS
-  const ehTransporte = atividade.startsWith('transporte');           // ICMS no lugar do ISS (§5º-E)
-  const ehICMS = (atividade==='comercio'||atividade==='industria'||ehTransporte);
-  const ehServPresuncao = ehServISS || ehTransporte;
+  const ehISSTipo  = t => t.startsWith('servico');                          // sujeitos a ISS
+  const ehICMSTipo = t => (t==='comercio'||t==='industria'||t.startsWith('transporte')); // sujeitos a ICMS (§5º-E p/ transporte)
+  /* receitas do período segregadas por incidência */
+  const recISS  = ativs.filter(a=>ehISSTipo(a.tipo)).reduce((s,a)=>s+a.rbt12,0)*f;
+  const recICMS = ativs.filter(a=>ehICMSTipo(a.tipo)).reduce((s,a)=>s+a.rbt12,0)*f;
+  const recIPI  = ativs.filter(a=>a.tipo==='industria').reduce((s,a)=>s+a.rbt12,0)*f;
 
   const warnings = [];
+  const usaFatorR = ativs.some(a=>['servico_iii','servico_v'].includes(a.tipo));
 
-  /* ---------- FATOR R (folha 12m ÷ RBT12, CGSN 140 art. 26) ---------- */
+  /* ---------- FATOR R global (folha 12m ÷ RBT12 global, CGSN 140 art. 26) ---------- */
   const massaSalarial = folha + prolabore + fgts;
   const fatorR = rbt12>0 ? massaSalarial/rbt12 : 0;
 
@@ -1057,107 +1153,140 @@ function engine(inp){
   const cppRate = inssPatronal||0;
   const cppNormal = folhaPer*cppRate + proPer*0.20;
 
-  /* ---------- 1) SIMPLES NACIONAL ---------- */
-  const anexo = escolherAnexo(atividade, fatorR);
-  const fx = faixaSimples(anexo, rbt12);
-  let aliqEfetiva = rbt12>0 ? (rbt12*fx.aliq - fx.pd)/rbt12 : 0;
-  if(aliqEfetiva<0) aliqEfetiva=0;
-  const das = receita * aliqEfetiva;
-
-  // repartição do DAS por tributo (em alíquota efetiva de cada um)
+  /* ---------- 1) SIMPLES NACIONAL ----------
+     Receita de cada atividade tributada pelo anexo correspondente;
+     a alíquota efetiva de cada anexo é definida pela RBT12 GLOBAL. */
   const repOrdem = ['irpj','csll','cofins','pis','cpp','ipi','icms','iss'];
-  const repNomes = {irpj:'IRPJ', csll:'CSLL', cofins:'COFINS', pis:'PIS', cpp:'CPP (INSS patronal)', ipi:'IPI', icms:'ICMS', iss:ehTransporte?'ICMS (§5º-E)':'ISS'};
-  let efetTrib = {};
-  repOrdem.forEach(k=>{ if(fx.rep[k]!=null) efetTrib[k] = aliqEfetiva * fx.rep[k]/100; });
-  // trava do ISS em 5% da receita (LC 123, Anexos III/IV/V) — excesso volta aos federais
-  let issDAS_efet = efetTrib.iss||0;
-  if(!ehTransporte && efetTrib.iss && efetTrib.iss > 0.05){
-    const excesso = efetTrib.iss - 0.05;
-    issDAS_efet = 0.05;
-    const fed = ['irpj','csll','cofins','pis','cpp'].filter(k=>efetTrib[k]!=null);
-    const somaFed = fed.reduce((s,k)=>s+fx.rep[k],0);
-    fed.forEach(k=>{ efetTrib[k] += excesso * (fx.rep[k]/somaFed); });
-    efetTrib.iss = issDAS_efet;
-  }
-  const issDAS = receita * (efetTrib.iss||0);
+  const repNomes = {irpj:'IRPJ', csll:'CSLL', cofins:'COFINS', pis:'PIS', cpp:'CPP (INSS patronal)', ipi:'IPI', icms:'ICMS', iss:'ISS'};
+  const detAtivs = ativs.map(a=>{
+    const anexo = escolherAnexo(a.tipo, fatorR);
+    const fx = faixaSimples(anexo, rbt12);
+    let ef = rbt12>0 ? (rbt12*fx.aliq - fx.pd)/rbt12 : 0;
+    if(ef<0) ef=0;
+    const recA = a.rbt12*f;
+    const das = recA*ef;
+    const ehTransp = a.tipo.startsWith('transporte');
+    const efetTrib = {};
+    repOrdem.forEach(k=>{ if(fx.rep[k]!=null) efetTrib[k] = ef*fx.rep[k]/100; });
+    // trava do ISS em 5% da receita (LC 123, Anexos III/IV/V) — excesso volta aos federais
+    if(!ehTransp && efetTrib.iss && efetTrib.iss > 0.05){
+      const excesso = efetTrib.iss - 0.05;
+      const fed = ['irpj','csll','cofins','pis','cpp'].filter(k=>efetTrib[k]!=null);
+      const somaFed = fed.reduce((s,k)=>s+fx.rep[k],0);
+      fed.forEach(k=>{ efetTrib[k] += excesso * (fx.rep[k]/somaFed); });
+      efetTrib.iss = 0.05;
+    }
+    return {tipo:a.tipo, anexo, fx, ef, recA, das, efetTrib, ehTransp};
+  });
+  const das = detAtivs.reduce((s,d)=>s+d.das,0);
+  const aliqEfetiva = detAtivs[0] ? detAtivs[0].ef : 0;   // compat: efetiva da 1ª atividade
+  const issDAS = detAtivs.filter(d=>!d.ehTransp).reduce((s,d)=> s + d.recA*(d.efetTrib.iss||0), 0);
 
-  // sublimite de R$ 3,6 mi: ICMS/ISS saem do DAS (a 6ª faixa já tem repartição 0)
+  // agrega as fatias do DAS por tributo (na fatia de transporte, o "ISS" é ICMS — §5º-E)
+  const agg = {};
+  detAtivs.forEach(d=>{
+    repOrdem.forEach(k=>{
+      if(d.efetTrib[k]==null) return;
+      const v = d.recA*d.efetTrib[k];
+      if(v<=1e-9) return;
+      const chave = (k==='iss' && d.ehTransp) ? 'icms' : k;
+      agg[chave] = (agg[chave]||0)+v;
+    });
+  });
+
+  // sublimite de R$ 3,6 mi (pela RBT12 global): ICMS/ISS saem do DAS (a 6ª faixa já tem repartição 0)
   const sublimiteAtivo = rbt12 > SUBLIMITE && rbt12 <= TETO_SIMPLES;
   let icms_s = 0, iss_s = 0;
   if(rbt12 > SUBLIMITE){
-    if(ehICMS) icms_s = Math.max(0,(receita - custosPer*pctCredIcms))*aliqIcms;
-    if(ehServISS) iss_s = receita*aliqIss;
+    if(recICMS>0) icms_s = Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms;
+    if(recISS>0)  iss_s = recISS*aliqIss;
   }
-  // Anexo IV: CPP nunca está no DAS — paga por fora como nos regimes normais
-  const cpp_simples = (anexo==='IV') ? cppNormal : 0;
+  // Anexo IV: CPP nunca está no DAS — por fora, proporcional à receita do Anexo IV (atividades concomitantes)
+  const recIV = detAtivs.filter(d=>d.anexo==='IV').reduce((s,d)=>s+d.recA,0);
+  const cpp_simples = (recIV>0 && receita>0) ? cppNormal*(recIV/receita) : 0;
+  const excedeSimples = rbt12 > TETO_SIMPLES;
   const simplesTotal = das + icms_s + iss_s + cpp_simples;
 
   const compSimples = repOrdem
-    .filter(k=>efetTrib[k]!=null && efetTrib[k]>1e-12)
-    .map(k=>({label:'DAS · '+repNomes[k], valor:receita*efetTrib[k], base:receita, nominal:null}));
-  if(cpp_simples>0) compSimples.push({label:'INSS patronal (fora do DAS — Anexo IV)', valor:cpp_simples, base:folhaPer+proPer, nominal:null});
-  if(icms_s>0) compSimples.push({label:'ICMS fora do DAS (sublimite)', valor:icms_s, base:Math.max(0,receita-custosPer*pctCredIcms), nominal:aliqIcms*100});
-  if(iss_s>0) compSimples.push({label:'ISS fora do DAS (sublimite)', valor:iss_s, base:receita, nominal:aliqIss*100});
+    .filter(k=> agg[k]!=null && agg[k]>1e-9)
+    .map(k=>({label:'DAS · '+repNomes[k], valor:agg[k], base:receita, nominal:null}));
+  if(cpp_simples>0) compSimples.push({label:'INSS patronal (fora do DAS — Anexo IV'+(receita-recIV>0.005?', proporcional':'')+')', valor:cpp_simples, base:folhaPer+proPer, nominal:null});
+  if(icms_s>0) compSimples.push({label:'ICMS fora do DAS (sublimite)', valor:icms_s, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100});
+  if(iss_s>0) compSimples.push({label:'ISS fora do DAS (sublimite)', valor:iss_s, base:recISS, nominal:aliqIss*100});
 
-  const usaFatorR = ['servico_iii','servico_v'].includes(atividade);
+  const anexosUsados = [...new Set(detAtivs.map(d=>d.anexo))];
   const simples = {
     nome:'Simples Nacional',
-    anexoLabel: ANEXOS[anexo].nome + (usaFatorR ? ` · Fator R ${pct(fatorR*100)}` : ''),
+    anexoLabel: (multi ? 'Atividades mistas — Anexos '+anexosUsados.join(' + ') : ANEXOS[detAtivs[0].anexo].nome)
+      + (usaFatorR ? ` · Fator R ${pct(fatorR*100)}` : ''),
     total: simplesTotal,
     efetiva: receita>0 ? simplesTotal/receita*100 : 0,
-    excede: fx.excede||false,
-    nota:`Faixa ${fx.idx+1}ª · alíq. nominal ${pct(fx.aliq*100)} · parcela a deduzir ${fmt(fx.pd)} · DAS ${fmt(das)}`+
-         (sublimiteAtivo?` · sublimite: ICMS/ISS por fora`:'')+
-         (anexo==='IV'?` · CPP por fora`:''),
+    excede: excedeSimples,
+    nota: detAtivs.map(d=>`${TIPO_CURTO[d.tipo]}: Anexo ${d.anexo} · ${d.fx.idx+1}ª faixa · efet. ${pct(d.ef*100)} · DAS ${fmt(d.das)}`).join('<br>')
+      + (sublimiteAtivo?'<br>Sublimite: ICMS/ISS recolhidos por fora.':'')
+      + (cpp_simples>0?('<br>CPP do Anexo IV por fora'+(receita-recIV>0.005?' (proporcional à receita do anexo)':'')+'.'):''),
     comp: compSimples
   };
 
-  if(fx.excede) warnings.push({t:'warn', m:'RBT12 acima de R$ 4,8 mi — empresa fora do Simples; o cartão é exibido apenas como referência e não concorre como melhor regime.'});
+  if(excedeSimples) warnings.push({t:'warn', m:'RBT12 global acima de R$ 4,8 mi — empresa fora do Simples; o cartão é exibido apenas como referência e não concorre como melhor regime.'});
   else if(rbt12 > SUBLIMITE){
-    warnings.push({t:'info', m:'RBT12 acima do sublimite de R$ 3,6 mi: ICMS/ISS saíram do DAS e foram calculados por fora, pela apuração normal.'});
-    if(ehICMS && aliqIcms===0) warnings.push({t:'warn', m:'Informe a alíquota de ICMS — com o sublimite ativo, o ICMS por fora está zerado.'});
-    if(ehServISS && aliqIss===0) warnings.push({t:'warn', m:'Informe a alíquota de ISS — com o sublimite ativo, o ISS por fora está zerado.'});
+    warnings.push({t:'info', m:'RBT12 global acima do sublimite de R$ 3,6 mi: ICMS/ISS saíram do DAS e foram calculados por fora, pela apuração normal.'});
+    if(recICMS>0 && aliqIcms===0) warnings.push({t:'warn', m:'Informe a alíquota de ICMS — com o sublimite ativo, o ICMS por fora está zerado.'});
+    if(recISS>0 && aliqIss===0) warnings.push({t:'warn', m:'Informe a alíquota de ISS — com o sublimite ativo, o ISS por fora está zerado.'});
   }
   if(usaFatorR && fatorR<0.28 && fatorR>=0.22)
     warnings.push({t:'info', m:`Fator R em ${pct(fatorR*100)} — faltam ${pct((0.28-fatorR)*100)} de folha/RBT12 para migrar do Anexo V ao III. Avalie ajustar o pró-labore.`});
+  if(multi && cpp_simples>0)
+    warnings.push({t:'info', m:`Atividades concomitantes com Anexo IV: a CPP por fora foi rateada pela participação da receita do Anexo IV (${receita>0?pct(recIV/receita*100):'—'}) — confirme o rateio da folha com a escrituração.`});
 
-  /* ---------- 2) LUCRO PRESUMIDO ---------- */
-  let presIRPJ, presCSLL;
-  if(ehServPresuncao){ presIRPJ=0.32; presCSLL=0.32; }
-  else { presIRPJ=0.08; presCSLL=0.12; }
-  if(atividade==='transporte_carga'){ presIRPJ=0.08; presCSLL=0.12; }
-  if(atividade==='transporte_pass'){ presIRPJ=0.16; presCSLL=0.12; }
-
+  /* ---------- 2) LUCRO PRESUMIDO ----------
+     Presunção POR ATIVIDADE (8% revenda/ind./transp. cargas, 16% transp.
+     passageiros, 32% serviços); bases somadas p/ IRPJ/CSLL. */
+  function presDe(tipo){
+    if(tipo==='transporte_carga') return [0.08,0.12];
+    if(tipo==='transporte_pass')  return [0.16,0.12];
+    if(tipo.startsWith('servico')) return [0.32,0.32];
+    return [0.08,0.12]; // comércio / indústria
+  }
   // LC 224/2025: +10% na presunção p/ receita bruta anual > R$ 5 mi (salvo liminar)
   const aplicaLC224 = (rbt12 > GATILHO_LC224) && !lc224Liminar;
-  const presIRPJ0 = presIRPJ, presCSLL0 = presCSLL;
-  if(aplicaLC224){ presIRPJ = +(presIRPJ*1.10).toFixed(4); presCSLL = +(presCSLL*1.10).toFixed(4); }
-
-  const baseIRPJ_p = receita*presIRPJ;
-  const baseCSLL_p = receita*presCSLL;
+  const fLC = aplicaLC224 ? 1.10 : 1;
+  let baseIRPJ_p = 0, baseCSLL_p = 0;
+  const detPres = ativs.map(a=>{
+    const [pi,pc] = presDe(a.tipo);
+    const piM = +(pi*fLC).toFixed(4), pcM = +(pc*fLC).toFixed(4);
+    const recA = a.rbt12*f;
+    baseIRPJ_p += recA*piM;
+    baseCSLL_p += recA*pcM;
+    return {tipo:a.tipo, presIRPJ:piM, presCSLL:pcM, recA};
+  });
+  const presIRPJ = detPres[0].presIRPJ, presCSLL = detPres[0].presCSLL;  // compat: 1ª atividade
   const irpj_p = baseIRPJ_p*0.15 + Math.max(0, baseIRPJ_p - limiteAdic)*0.10;
   const csll_p = baseCSLL_p*0.09;
   const pis_p = receita*0.0065;
   const cofins_p = receita*0.03;
-  const iss_p = ehServISS ? receita*aliqIss : 0;
-  const icms_p = ehICMS ? Math.max(0,(receita - custosPer*pctCredIcms))*aliqIcms : 0;
-  const ipi_p = atividade==='industria' ? receita*aliqIpi : 0;
+  const iss_p = recISS*aliqIss;
+  const icms_p = recICMS>0 ? Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms : 0;
+  const ipi_p = recIPI*aliqIpi;
   const cpp_p = cppNormal;
   const presumidoTotal = irpj_p+csll_p+pis_p+cofins_p+iss_p+icms_p+ipi_p+cpp_p;
   const presumido = {
     nome:'Lucro Presumido',
-    anexoLabel:`Presunção IRPJ ${pct(presIRPJ*100)} · CSLL ${pct(presCSLL*100)}` + (aplicaLC224?' · LC 224/2025 (+10%)':''),
+    anexoLabel:(multi ? 'Presunções segregadas por atividade' : `Presunção IRPJ ${pct(presIRPJ*100)} · CSLL ${pct(presCSLL*100)}`)
+      + (aplicaLC224?' · LC 224/2025 (+10%)':''),
     total: presumidoTotal,
     efetiva: receita>0?presumidoTotal/receita*100:0,
-    nota: aplicaLC224 ? `LC 224/2025 aplicada: presunção majorada (IRPJ ${pct(presIRPJ0*100)}→${pct(presIRPJ*100)} · CSLL ${pct(presCSLL0*100)}→${pct(presCSLL*100)})` : null,
+    nota: (multi ? detPres.map(d=>`${TIPO_CURTO[d.tipo]}: presunção IRPJ ${pct(d.presIRPJ*100)} · CSLL ${pct(d.presCSLL*100)}`).join('<br>') : '')
+      + (aplicaLC224 ? (multi?'<br>':'')+'LC 224/2025 aplicada: presunções majoradas em +10% (faturamento > R$ 5 mi).' : '')
+      || null,
     comp:[
       {label:'IRPJ (15% + adicional)', valor:irpj_p, base:baseIRPJ_p, nominal:15},
       {label:'CSLL (9%)', valor:csll_p, base:baseCSLL_p, nominal:9},
       {label:'PIS (cumulativo)', valor:pis_p, base:receita, nominal:0.65},
       {label:'COFINS (cumulativo)', valor:cofins_p, base:receita, nominal:3},
-      ...(iss_p>0?[{label:'ISS', valor:iss_p, base:receita, nominal:aliqIss*100}]:[]),
-      ...(icms_p>0?[{label:'ICMS', valor:icms_p, base:Math.max(0,receita-custosPer*pctCredIcms), nominal:aliqIcms*100}]:[]),
-      ...(ipi_p>0?[{label:'IPI', valor:ipi_p, base:receita, nominal:aliqIpi*100}]:[]),
+      ...(iss_p>0?[{label:'ISS', valor:iss_p, base:recISS, nominal:aliqIss*100}]:[]),
+      ...(icms_p>0?[{label:'ICMS', valor:icms_p, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100}]:[]),
+      ...(ipi_p>0?[{label:'IPI', valor:ipi_p, base:recIPI, nominal:aliqIpi*100}]:[]),
       ...(cpp_p>0?[{label:'INSS patronal', valor:cpp_p, base:folhaPer+proPer, nominal:null}]:[])
     ]
   };
@@ -1167,9 +1296,9 @@ function engine(inp){
   const baseCred = (insumosPer!=null) ? insumosPer : custosPer;
   const pis_r = Math.max(0,(receita - baseCred))*0.0165;
   const cofins_r = Math.max(0,(receita - baseCred))*0.076;
-  const iss_r = ehServISS ? receita*aliqIss : 0;
-  const icms_r = ehICMS ? Math.max(0,(receita - custosPer*pctCredIcms))*aliqIcms : 0;
-  const ipi_r = atividade==='industria' ? receita*aliqIpi : 0;
+  const iss_r = recISS*aliqIss;
+  const icms_r = recICMS>0 ? Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms : 0;
+  const ipi_r = recIPI*aliqIpi;
   const cpp_r = cppNormal;
   // lucro tributável: se o LAIR não foi informado, deduz folha, encargos e tributos sobre receita
   const lucroAuto = receita - custosPer - despPer - folhaPer - proPer - fgtsPer - cpp_r - pis_r - cofins_r - icms_r - iss_r;
@@ -1190,16 +1319,16 @@ function engine(inp){
       {label:'CSLL (9%)', valor:csll_r, base:lucro, nominal:9},
       {label:'PIS não-cumulativo', valor:pis_r, base:Math.max(0,receita-baseCred), nominal:1.65},
       {label:'COFINS não-cumulativo', valor:cofins_r, base:Math.max(0,receita-baseCred), nominal:7.6},
-      ...(iss_r>0?[{label:'ISS', valor:iss_r, base:receita, nominal:aliqIss*100}]:[]),
-      ...(icms_r>0?[{label:'ICMS', valor:icms_r, base:Math.max(0,receita-custosPer*pctCredIcms), nominal:aliqIcms*100}]:[]),
-      ...(ipi_r>0?[{label:'IPI', valor:ipi_r, base:receita, nominal:aliqIpi*100}]:[]),
+      ...(iss_r>0?[{label:'ISS', valor:iss_r, base:recISS, nominal:aliqIss*100}]:[]),
+      ...(icms_r>0?[{label:'ICMS', valor:icms_r, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100}]:[]),
+      ...(ipi_r>0?[{label:'IPI', valor:ipi_r, base:recIPI, nominal:aliqIpi*100}]:[]),
       ...(cpp_r>0?[{label:'INSS patronal', valor:cpp_r, base:folhaPer+proPer, nominal:null}]:[])
     ]
   };
 
-  if(ehServISS && aliqIss===0 && rbt12<=SUBLIMITE)
+  if(recISS>0 && aliqIss===0 && rbt12<=SUBLIMITE)
     warnings.push({t:'warn', m:'Alíquota de ISS não informada — Presumido e Real estão sem ISS; o comparativo pode favorecê-los indevidamente.'});
-  if(ehICMS && aliqIcms===0 && rbt12<=SUBLIMITE)
+  if(recICMS>0 && aliqIcms===0 && rbt12<=SUBLIMITE)
     warnings.push({t:'warn', m:'Alíquota de ICMS não informada — Presumido e Real estão sem ICMS; o comparativo pode favorecê-los indevidamente.'});
   if(aplicaLC224)
     warnings.push({t:'info', m:'LC 224/2025 aplicada no Presumido (+10% na presunção, faturamento > R$ 5 mi). Havendo liminar, marque a opção na seção 04.'});
@@ -1213,22 +1342,29 @@ function engine(inp){
   const elegiveis = regimes.filter(r=> !(r.key==='simples' && r.excede));
   const melhor = elegiveis.reduce((a,b)=> b.total<a.total?b:a);
 
-  // números crus p/ autoteste e auditoria
+  // números crus p/ autoteste e auditoria (das0..3/efetiva0..3/anexo0..3 = por atividade)
   const nums = {
-    fatorR, anexo, aliqEfetiva, das, issDAS, cpp_simples, icms_s, iss_s, simplesTotal,
+    fatorR, anexo: detAtivs[0].anexo, aliqEfetiva, das, issDAS, cpp_simples, icms_s, iss_s, simplesTotal,
     presIRPJ, presCSLL, aplicaLC224,
     irpj_p, csll_p, pis_p, cofins_p, iss_p, icms_p, ipi_p, cpp_p, presumidoTotal,
     irpj_r, csll_r, pis_r, cofins_r, iss_r, icms_r, ipi_r, cpp_r, realTotal, lucro, receita
   };
-  return { regimes, melhor, receita, rbt12, meses, fatorR, anexo, atividade, warnings, nums };
+  detAtivs.forEach((d,i)=>{ nums['das'+i]=d.das; nums['efetiva'+i]=d.ef; nums['anexo'+i]=d.anexo; });
+  return {
+    regimes, melhor, receita, rbt12, meses, fatorR,
+    anexo: detAtivs[0].anexo, atividade: ativs[0].tipo, usaFatorR,
+    ativos: detAtivs.map(d=>({tipo:d.tipo, label:TIPO_CURTO[d.tipo], anexo:d.anexo, efetiva:d.ef, das:d.das, receita:d.recA})),
+    warnings, nums
+  };
 }
 
 function coletaEmpresa(){
+  const tipos = lerAtividadesDOM().map(a=>TIPO_CURTO[a.tipo]||a.tipo);
   return {
     nome: $('empNome').value||'—',
     cnpj: $('empCnpj').value||'—',
     cnae: $('empCnae').value||'—',
-    atividade: $('atividade').selectedOptions[0].text
+    atividade: tipos.join(' + ')
   };
 }
 
@@ -1266,7 +1402,7 @@ function render(regimes, melhor, data){
         <div class="eco">
           ${segundo && eco2>0.005 ? `Economia de <b>${fmt(eco2)}</b> (${receitaR>0?pct(eco2/receitaR*100):'—'} da receita) frente ao ${segundo.nome}${pior&&pior!==segundo&&ecoPior>eco2+0.005?` — e de <b>${fmt(ecoPior)}</b> frente ao ${pior.nome}`:''}.`
             : 'Os regimes ficaram praticamente empatados — analise as obrigações acessórias de cada um.'}
-          ${melhor.key==='simples' && data.fatorR<0.28 && ['servico_iii','servico_v'].includes(data.atividade) ? ' Fator R abaixo de 28% — a empresa cai no Anexo V.' : ''}
+          ${melhor.key==='simples' && data.fatorR<0.28 && data.usaFatorR ? ' Fator R abaixo de 28% — as receitas dependentes caem no Anexo V.' : ''}
         </div>
       </div>
       <div class="hv-stats">
@@ -1338,8 +1474,8 @@ function donutSVG(items, total, efetivaPct){
 
 function motivoVs(loser, melhor, d){
   if(loser.key==='simples'){
-    if(['servico_iii','servico_v'].includes(d.atividade) && d.fatorR<0.28)
-      return `No Simples, o Fator R de ${pct(d.fatorR*100)} (abaixo de 28%) joga a empresa no Anexo V, cuja alíquota efetiva (${pct(loser.efetiva)}) é alta para serviços. O ${melhor.nome} tributa de forma mais leve neste cenário.`;
+    if(d.usaFatorR && d.fatorR<0.28)
+      return `No Simples, o Fator R de ${pct(d.fatorR*100)} (abaixo de 28%) joga as receitas de serviço no Anexo V, cuja alíquota efetiva é alta. O ${melhor.nome} tributa de forma mais leve neste cenário.`;
     return `Nesta faixa de faturamento, a carga efetiva do Simples chega a ${pct(loser.efetiva)} — acima da carga do ${melhor.nome} (${pct(melhor.efetiva)}).`;
   }
   if(loser.key==='presumido'){
@@ -1413,9 +1549,10 @@ function renderDashboard(d){
   const notas = [];
   if(melhor.key==='simples'){
     notas.push('Guia única (DAS), menos obrigações acessórias e tributação sobre o faturamento — não sobre o lucro.');
-    if(['servico_iii','servico_v'].includes(d.atividade) && d.fatorR<0.28)
-      notas.push(`O Fator R está em ${pct(d.fatorR*100)}. Elevar folha/pró-labore para ≥ 28% migraria ao Anexo III e reduziria ainda mais a carga.`);
-    if(d.anexo==='IV') notas.push('No Anexo IV a CPP (INSS patronal) não está no DAS — o valor por fora já está somado no comparativo.');
+    if(d.usaFatorR && d.fatorR<0.28)
+      notas.push(`O Fator R está em ${pct(d.fatorR*100)}. Elevar folha/pró-labore para ≥ 28% migraria as receitas de serviço ao Anexo III e reduziria ainda mais a carga.`);
+    if(d.ativos && d.ativos.some(a=>a.anexo==='IV')) notas.push('Receitas do Anexo IV têm a CPP (INSS patronal) fora do DAS — o valor por fora já está somado no comparativo.');
+    if(d.ativos && d.ativos.length>1) notas.push('Atividades mistas: cada receita foi tributada pelo anexo próprio, com a alíquota efetiva definida pela RBT12 global (art. 18 §4º da LC 123) — confira a segregação de receitas no PGDAS.');
   }
   if(melhor.key==='presumido'){
     notas.push('Apuração mais simples que o Real; ideal quando a margem real de lucro supera a presunção da atividade.');
@@ -1468,10 +1605,13 @@ function exportRows(){
     ['Empresa', d.empresa.nome],
     ['CNPJ', d.empresa.cnpj],
     ['CNAE', d.empresa.cnae],
-    ['Atividade', d.empresa.atividade],
+    ['Atividade(s)', d.empresa.atividade],
     ['Período (meses)', d.meses],
-    ['RBT12 (12 meses)', fmt(d.rbt12)],
+    ['RBT12 global (12 meses)', fmt(d.rbt12)],
     ['Receita do período', fmt(d.receita)],
+    ...((d.ativos && d.ativos.length>1)
+      ? d.ativos.map(a=>[`— ${a.label}`, `Anexo ${a.anexo}`, `efet. ${pct(a.efetiva*100)}`, `receita ${fmt(a.receita)}`, `DAS ${fmt(a.das)}`])
+      : []),
     ['Fator R', pct(d.fatorR*100)],
     ['Data', new Date().toLocaleDateString('pt-BR')],
     [],
@@ -1734,7 +1874,22 @@ const TESTES = [
   { nome:'Período trimestral — proporcionalização consistente (RBT12 1,2 mi, 3 meses)',
     memoria:'Receita do trimestre = 300.000 · DAS = 300.000 × 8,825% = 26.475 · IRPJ presumido: base 24.000 × 15% = 3.600 (limite adicional 60.000) · PIS 1.950',
     inp:inpBase({rbt12:1200000, meses:3, atividade:'comercio'}),
-    checa:[['Receita do período','receita',300000],['Total Simples','simplesTotal',26475],['IRPJ Presumido','irpj_p',3600],['PIS Presumido','pis_p',1950]] }
+    checa:[['Receita do período','receita',300000],['Total Simples','simplesTotal',26475],['IRPJ Presumido','irpj_p',3600],['PIS Presumido','pis_p',1950]] },
+
+  { nome:'ATIVIDADES MISTAS — Comércio 600k + Serviço §5º-B 600k (RBT12 global 1,2 mi)',
+    memoria:'Alíquotas pela RBT12 GLOBAL (art. 18 §4º): Anexo I 4ª fx 8,825% → DAS 52.950 · Anexo III 4ª fx (192.000−35.640)÷1,2mi = 13,03% → DAS 78.180 · total 131.130 · Presumido: bases 600k×8% + 600k×32% = 240k → IRPJ 36.000 (sem adicional) · CSLL 264k×9% = 23.760',
+    inp:inpBase({atividades:[{tipo:'comercio',rbt12:600000},{tipo:'servico_iii_fixo',rbt12:600000}]}),
+    checa:[['Anexo ativ. 1','anexo0','I'],['Anexo ativ. 2','anexo1','III'],['DAS Comércio','das0',52950],['DAS Serviços','das1',78180],['Total Simples','simplesTotal',131130],['IRPJ Presumido (bases segregadas)','irpj_p',36000],['CSLL Presumido','csll_p',23760]] },
+
+  { nome:'ATIVIDADES MISTAS — Comércio 300k + Transporte de cargas 300k (global 600k)',
+    memoria:'Anexo I 3ª fx: (57.000−13.860)÷600k = 7,19% → DAS 21.570 · Transporte: Anexo III (§5º-E) 3ª fx: (81.000−17.640)÷600k = 10,56% → DAS 31.680 · total 53.250 · Presumido: IRPJ base (300k+300k)×8% = 48k → 7.200',
+    inp:inpBase({atividades:[{tipo:'comercio',rbt12:300000},{tipo:'transporte_carga',rbt12:300000}]}),
+    checa:[['DAS Comércio','das0',21570],['DAS Transporte','das1',31680],['Total Simples','simplesTotal',53250],['IRPJ Presumido','irpj_p',7200]] },
+
+  { nome:'ATIVIDADES MISTAS — Comércio 500k + Anexo IV 500k, folha 100k (CPP proporcional)',
+    memoria:'Global 1 mi: Anexo I 4ª fx 8,45% → DAS 42.250 · Anexo IV 4ª fx (140.000−39.780)÷1mi = 10,022% → DAS 50.110 · CPP fora: 26.800 × (500k÷1mi) = 13.400 · total 105.760',
+    inp:inpBase({atividades:[{tipo:'comercio',rbt12:500000},{tipo:'servico_iv',rbt12:500000}], folha:100000}),
+    checa:[['Efetiva Comércio','efetiva0',0.0845],['DAS Comércio','das0',42250],['DAS Anexo IV','das1',50110],['CPP por fora (proporcional)','cpp_simples',13400],['Total Simples','simplesTotal',105760]] }
 ];
 
 function aprox(a,b){
@@ -1746,7 +1901,7 @@ function aprox(a,b){
 function fmtVal(campo,v){
   if(typeof v==='boolean') return v?'Sim':'Não';
   if(typeof v==='string') return v;
-  if(campo==='aliqEfetiva'||campo==='presIRPJ'||campo==='presCSLL') return pct(v*100);
+  if(campo==='aliqEfetiva'||campo==='presIRPJ'||campo==='presCSLL'||/^efetiva\d$/.test(campo)) return pct(v*100);
   return fmt(v);
 }
 function autoteste(){
@@ -1889,10 +2044,12 @@ async function carregarEstudos(){
   atualizarGaleriaCount(); renderGaleria();
 }
 function coletarFormulario(){
+  const ativs = lerAtividadesDOM();
   const f = {
     empNome:$('empNome').value, empCnpj:$('empCnpj').value, empCnae:$('empCnae').value,
-    atividade:$('atividade').value, meses:$('meses').value,
-    rbt:[...document.querySelectorAll('.rbtm')].map(i=>i.value),
+    atividades:ativs,                      // formato novo: [{tipo, rbt:[12]}]
+    atividade:ativs[0]?ativs[0].tipo:'comercio',   // compat com versões antigas
+    meses:$('meses').value,
     mediaFormulada:$('mediaFormulada').checked,
     folha:$('folha').value, prolabore:$('prolabore').value, fgts:$('fgts').value,
     inssPatronal:$('inssPatronal').value,
@@ -1906,10 +2063,12 @@ function coletarFormulario(){
 function aplicarFormulario(f){
   if(!f) return;
   $('empNome').value=f.empNome||''; $('empCnpj').value=f.empCnpj||''; $('empCnae').value=f.empCnae||'';
-  if(f.atividade) $('atividade').value=f.atividade;
+  // formato novo (atividades[]) ou migração do antigo (atividade única + rbt[])
+  const dados = (f.atividades && f.atividades.length)
+    ? f.atividades
+    : [{tipo: f.atividade||'comercio', rbt: f.rbt||[]}];
+  buildAtividades(dados);
   if(f.meses) $('meses').value=f.meses;
-  const cells=[...document.querySelectorAll('.rbtm')];
-  (f.rbt||[]).forEach((v,i)=>{ if(cells[i]) cells[i].value=v; });
   $('mediaFormulada').checked=!!f.mediaFormulada;
   $('folha').value=f.folha||''; $('prolabore').value=f.prolabore||''; $('fgts').value=f.fgts||'';
   $('inssPatronal').value=(f.inssPatronal!=null && f.inssPatronal!=='')?f.inssPatronal:'26,8';
@@ -1918,7 +2077,7 @@ function aplicarFormulario(f){
   $('aliqIcms').value=f.aliqIcms||''; $('aliqIss').value=f.aliqIss||''; $('aliqIpi').value=f.aliqIpi||'';
   $('pctCredIcms').value=(f.pctCredIcms!=null&&f.pctCredIcms!=='')?f.pctCredIcms:'0';
   $('lc224Liminar').checked=!!f.lc224Liminar;
-  updRbt(); atividadeChange();
+  updRbt();
 }
 async function salvarEstudo(){
   if(!LAST){ alert('Calcule o estudo antes de salvar.'); return; }
@@ -2029,8 +2188,7 @@ function importBiblioteca(input){
    ============================================================ */
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') fecharGaleria(); });
 hidratarIcones();
-buildRbt();
-atividadeChange();
+buildAtividades([{tipo:'comercio', rbt:[]}]);
 document.querySelectorAll('input.money').forEach(i=> i.addEventListener('blur', fmtMoneyBlur));
 estudosCache = supa ? [] : lerEstudos();
 atualizarGaleriaCount();
