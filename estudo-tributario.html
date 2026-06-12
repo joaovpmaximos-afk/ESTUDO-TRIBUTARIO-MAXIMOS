@@ -866,12 +866,12 @@ function buildProjecao(linhas){
         <span class="proj-num">${ai+1}</span>
         <select class="ativSel" data-a="${ai}" onchange="ativTipoChange()">${opts}</select>
         <input class="money ativValor" data-a="${ai}" placeholder="${ai===0?'automático = restante do RBT12':'0,00'}" inputmode="decimal" oninput="updRbt()" value="${a.valor?String(a.valor).replace(/"/g,'&quot;'):''}">
-        <button class="proj-cal${temMeses?' on':''}" onclick="toggleMeses(${ai})" title="Lançar os 12 meses deste anexo">${ic('cal',13)} 12 meses</button>
+        <button class="proj-cal${temMeses?' on':''}" onclick="toggleMeses(${ai})" title="Mostrar/ocultar os 12 meses deste anexo">${ic('cal',13)} 12 meses</button>
         <span class="m-badge" id="ativAnexo${ai}">—</span>
         <span class="proj-pc" id="ativPc${ai}">—</span>
         ${ai>0?`<button class="m-rm" onclick="rmAtividade(${ai})" title="Remover este anexo da projeção">✕</button>`:''}
       </div>
-      <div class="proj-meses" id="projMeses${ai}" style="display:${temMeses?'block':'none'}">
+      <div class="proj-meses" id="projMeses${ai}" style="display:block">
         <div class="rbt-grid">${cels}</div>
         <div class="proj-meses-tools">
           <button class="btn btn-text" onclick="repetirMesA(${ai})">↺ Repetir o 1º mês</button>
