@@ -585,7 +585,7 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
       </div>
       <div class="grid g4" style="margin-top:16px">
         <div>
-          <label>Alíquota ICMS média (%) <span class="q">(comércio/ind./transporte)</span></label>
+          <label>Alíquota ICMS venda (%) <span class="q">(comércio/ind./transporte)</span></label>
           <input class="perc" id="aliqIcms" placeholder="0">
         </div>
         <div>
@@ -597,12 +597,26 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
           <input class="perc" id="aliqIpi" placeholder="0">
         </div>
         <div>
-          <label>% das compras com crédito de ICMS</label>
+          <label>% das compras com crédito de ICMS <span class="q">(se não usar os campos abaixo)</span></label>
           <input class="perc" id="pctCredIcms" placeholder="0" value="0">
         </div>
       </div>
+      <div class="grid g3" style="margin-top:16px">
+        <div>
+          <label>Venda de mercadorias anual <span class="q">(base do débito de ICMS — Presumido/Real)</span></label>
+          <input class="money" id="vendaMerc" placeholder="auto: receita de comércio/ind./transp.">
+        </div>
+        <div>
+          <label>Compra de mercadorias anual <span class="q">(base do crédito de ICMS)</span></label>
+          <input class="money" id="compraMerc" placeholder="padrão: custos × % crédito">
+        </div>
+        <div>
+          <label>Alíquota ICMS compra (%)</label>
+          <input class="perc" id="aliqIcmsCompra" placeholder="vazio = alíq. de venda">
+        </div>
+      </div>
       <p class="note" style="margin-top:16px">
-        <b>ICMS</b> estimado pelo valor agregado: (receita − compras com crédito) × alíquota. O campo "% das compras com crédito" é o volume de compras que chega com ICMS destacado — não é desconto de preço.<br>
+        <b>ICMS no Presumido/Real</b> apurado como débito × crédito: <b>venda de mercadorias × alíquota de venda − compra de mercadorias × alíquota de compra</b> (nunca negativo). Campos de venda/compra vazios: o sistema usa a receita de comércio/indústria/transporte como venda e os custos × "% das compras com crédito" como crédito.<br>
         <b>PIS/COFINS no Lucro Real</b>: o crédito incide sobre insumos e despesas elegíveis (mercadoria, matéria-prima, energia, aluguel PJ, frete). Informe no campo próprio; vazio, o sistema usa os Custos como aproximação.<br>
         <b>Lucro Real</b>: se o LAIR ficar vazio, o lucro tributável é calculado como receita − custos − despesas − folha − encargos − tributos sobre a receita (PIS, COFINS, ICMS, ISS).
       </p>
@@ -1218,6 +1232,9 @@ function calcular(){
     aliqIss: parseNum($('aliqIss').value)/100,
     aliqIpi: parseNum($('aliqIpi').value)/100,
     pctCredIcms: parseNum($('pctCredIcms').value)/100,
+    vendaMerc: $('vendaMerc').value ? parseNum($('vendaMerc').value) : null,
+    compraMerc: $('compraMerc').value ? parseNum($('compraMerc').value) : null,
+    aliqIcmsCompra: parseNum($('aliqIcmsCompra').value)/100,
     inssPatronal: parseNum($('inssPatronal').value)/100,
     lucroRealInput: $('lucroReal').value ? parseNum($('lucroReal').value) : null,
     lc224Liminar: $('lc224Liminar') ? $('lc224Liminar').checked : false,
@@ -1231,6 +1248,7 @@ function calcular(){
 function engine(inp){
   const { meses, folha, prolabore, fgts, custos, despesas,
           aliqIcms, aliqIss, aliqIpi, pctCredIcms, inssPatronal,
+          vendaMerc, compraMerc, aliqIcmsCompra,
           lucroRealInput, lc224Liminar, insumosCredPC } = inp;
 
   /* atividades: [{tipo, rbt12}] (até 4 — empresas mistas, art. 18 §4º).
@@ -1257,6 +1275,15 @@ function engine(inp){
 
   // ISS fora do Simples: piso constitucional de 2% (EC 37/2002 / LC 116) — vale p/ Presumido, Real e sublimite
   const aliqIssCalc = Math.max(aliqIss||0, 0.02);
+
+  /* ICMS débito × crédito (Presumido/Real e parcela fora do DAS no sublimite):
+     débito  = venda de mercadorias × alíq. venda   (vendaMerc vazio → receita de comércio/ind./transporte)
+     crédito = compra de mercadorias × alíq. compra (compraMerc vazio → custos × % compras c/ crédito × alíq. venda) */
+  const baseDebIcms = (vendaMerc!=null && vendaMerc!==undefined) ? vendaMerc*f : recICMS;
+  const aliqCompraCalc = (aliqIcmsCompra>0) ? aliqIcmsCompra : (aliqIcms||0);
+  const credIcms = (compraMerc!=null && compraMerc!==undefined) ? compraMerc*f*aliqCompraCalc : custosPer*pctCredIcms*(aliqIcms||0);
+  const icmsNormal = Math.max(0, baseDebIcms*(aliqIcms||0) - credIcms);
+  const temIcms = (recICMS>0 || baseDebIcms>0);
 
   const warnings = [];
   const usaFatorR = ativs.some(a=>['servico_iii','servico_v'].includes(a.tipo));
@@ -1315,8 +1342,8 @@ function engine(inp){
   const sublimiteAtivo = rbt12 > SUBLIMITE && rbt12 <= TETO_SIMPLES;
   let icms_s = 0, iss_s = 0;
   if(rbt12 > SUBLIMITE){
-    if(recICMS>0) icms_s = Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms;
-    if(recISS>0)  iss_s = recISS*aliqIssCalc;
+    if(temIcms) icms_s = icmsNormal;
+    if(recISS>0) iss_s = recISS*aliqIssCalc;
   }
   // Anexo IV: CPP nunca está no DAS — por fora, proporcional à receita do Anexo IV (atividades concomitantes)
   const recIV = detAtivs.filter(d=>d.anexo==='IV').reduce((s,d)=>s+d.recA,0);
@@ -1328,7 +1355,7 @@ function engine(inp){
     .filter(k=> agg[k]!=null && agg[k]>1e-9)
     .map(k=>({label:'DAS · '+repNomes[k], valor:agg[k], base:receita, nominal:null}));
   if(cpp_simples>0) compSimples.push({label:'INSS patronal (fora do DAS — Anexo IV'+(receita-recIV>0.005?', proporcional':'')+')', valor:cpp_simples, base:folhaPer+proPer, nominal:null});
-  if(icms_s>0) compSimples.push({label:'ICMS fora do DAS (sublimite)', valor:icms_s, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100});
+  if(icms_s>0) compSimples.push({label:'ICMS fora do DAS (sublimite, débito − crédito)', valor:icms_s, base:baseDebIcms, nominal:aliqIcms*100});
   if(iss_s>0) compSimples.push({label:'ISS fora do DAS (sublimite)', valor:iss_s, base:recISS, nominal:aliqIssCalc*100});
 
   const anexosUsados = [...new Set(detAtivs.map(d=>d.anexo))];
@@ -1348,7 +1375,7 @@ function engine(inp){
   if(excedeSimples) warnings.push({t:'warn', m:'RBT12 global acima de R$ 4,8 mi — empresa fora do Simples; o cartão é exibido apenas como referência e não concorre como melhor regime.'});
   else if(rbt12 > SUBLIMITE){
     warnings.push({t:'info', m:'RBT12 global acima do sublimite de R$ 3,6 mi: ICMS/ISS saíram do DAS e foram calculados por fora, pela apuração normal.'});
-    if(recICMS>0 && aliqIcms===0) warnings.push({t:'warn', m:'Informe a alíquota de ICMS — com o sublimite ativo, o ICMS por fora está zerado.'});
+    if(temIcms && aliqIcms===0) warnings.push({t:'warn', m:'Informe a alíquota de ICMS — com o sublimite ativo, o ICMS por fora está zerado.'});
   }
   if(usaFatorR && fatorR<0.28 && fatorR>=0.22)
     warnings.push({t:'info', m:`Fator R em ${pct(fatorR*100)} — faltam ${pct((0.28-fatorR)*100)} de folha/RBT12 para migrar do Anexo V ao III. Avalie ajustar o pró-labore.`});
@@ -1382,7 +1409,7 @@ function engine(inp){
   const pis_p = receita*0.0065;
   const cofins_p = receita*0.03;
   const iss_p = recISS*aliqIssCalc;
-  const icms_p = recICMS>0 ? Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms : 0;
+  const icms_p = temIcms ? icmsNormal : 0;
   const ipi_p = recIPI*aliqIpi;
   const cpp_p = cppNormal;
   const presumidoTotal = irpj_p+csll_p+pis_p+cofins_p+iss_p+icms_p+ipi_p+cpp_p;
@@ -1401,7 +1428,7 @@ function engine(inp){
       {label:'PIS (cumulativo)', valor:pis_p, base:receita, nominal:0.65},
       {label:'COFINS (cumulativo)', valor:cofins_p, base:receita, nominal:3},
       ...(iss_p>0?[{label:'ISS', valor:iss_p, base:recISS, nominal:aliqIssCalc*100}]:[]),
-      ...(icms_p>0?[{label:'ICMS', valor:icms_p, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100}]:[]),
+      ...(icms_p>0?[{label:'ICMS (débito − crédito)', valor:icms_p, base:baseDebIcms, nominal:aliqIcms*100}]:[]),
       ...(ipi_p>0?[{label:'IPI', valor:ipi_p, base:recIPI, nominal:aliqIpi*100}]:[]),
       ...(cpp_p>0?[{label:'INSS patronal', valor:cpp_p, base:folhaPer+proPer, nominal:null}]:[])
     ]
@@ -1413,7 +1440,7 @@ function engine(inp){
   const pis_r = Math.max(0,(receita - baseCred))*0.0165;
   const cofins_r = Math.max(0,(receita - baseCred))*0.076;
   const iss_r = recISS*aliqIssCalc;
-  const icms_r = recICMS>0 ? Math.max(0,(recICMS - custosPer*pctCredIcms))*aliqIcms : 0;
+  const icms_r = temIcms ? icmsNormal : 0;
   const ipi_r = recIPI*aliqIpi;
   const cpp_r = cppNormal;
   // lucro tributável: se o LAIR não foi informado, deduz folha, encargos e tributos sobre receita
@@ -1436,7 +1463,7 @@ function engine(inp){
       {label:'PIS não-cumulativo', valor:pis_r, base:Math.max(0,receita-baseCred), nominal:1.65},
       {label:'COFINS não-cumulativo', valor:cofins_r, base:Math.max(0,receita-baseCred), nominal:7.6},
       ...(iss_r>0?[{label:'ISS', valor:iss_r, base:recISS, nominal:aliqIssCalc*100}]:[]),
-      ...(icms_r>0?[{label:'ICMS', valor:icms_r, base:Math.max(0,recICMS-custosPer*pctCredIcms), nominal:aliqIcms*100}]:[]),
+      ...(icms_r>0?[{label:'ICMS (débito − crédito)', valor:icms_r, base:baseDebIcms, nominal:aliqIcms*100}]:[]),
       ...(ipi_r>0?[{label:'IPI', valor:ipi_r, base:recIPI, nominal:aliqIpi*100}]:[]),
       ...(cpp_r>0?[{label:'INSS patronal', valor:cpp_r, base:folhaPer+proPer, nominal:null}]:[])
     ]
@@ -1444,7 +1471,7 @@ function engine(inp){
 
   if(recISS>0 && aliqIss<0.02)
     warnings.push({t:'info', m:'ISS aplicado no piso legal de 2% (EC 37/2002) no Presumido e no Real'+(rbt12>SUBLIMITE?' e na parcela fora do DAS':'')+' — informe a alíquota do município na seção 04 se for maior.'});
-  if(recICMS>0 && aliqIcms===0 && rbt12<=SUBLIMITE)
+  if(temIcms && aliqIcms===0 && rbt12<=SUBLIMITE)
     warnings.push({t:'warn', m:'Alíquota de ICMS não informada — Presumido e Real estão sem ICMS; o comparativo pode favorecê-los indevidamente.'});
   if(aplicaLC224)
     warnings.push({t:'info', m:'LC 224/2025 aplicada no Presumido (+10% na presunção, faturamento > R$ 5 mi). Havendo liminar, marque a opção na seção 04.'});
@@ -1893,6 +1920,7 @@ function inpBase(over){
     rbt12:0, meses:12, atividade:'comercio',
     folha:0, prolabore:0, fgts:0, custos:0, despesas:0,
     aliqIcms:0, aliqIss:0, aliqIpi:0, pctCredIcms:0, inssPatronal:0.268,
+    vendaMerc:null, compraMerc:null, aliqIcmsCompra:0,
     lucroRealInput:0, lc224Liminar:false, insumosCredPC:null
   }, over);
 }
@@ -2010,7 +2038,12 @@ const TESTES = [
   { nome:'Piso do ISS (2%) — Presumido/Real sem alíquota informada (serviço 300k)',
     memoria:'EC 37/2002: ISS mínimo legal de 2% · ISS = 300.000 × 2% = 6.000 no Presumido e no Real (informando 5%, usa 5% — caso coberto nos testes de ISS acima)',
     inp:inpBase({rbt12:300000, atividade:'servico_iii_fixo', aliqIss:0, lucroRealInput:60000}),
-    checa:[['ISS Presumido (piso 2%)','iss_p',6000],['ISS Real (piso 2%)','iss_r',6000]] }
+    checa:[['ISS Presumido (piso 2%)','iss_p',6000],['ISS Real (piso 2%)','iss_r',6000]] },
+
+  { nome:'ICMS débito × crédito — venda e compra de mercadorias com alíquotas próprias',
+    memoria:'Débito: venda 800.000 × 18% = 144.000 · Crédito: compra 300.000 × 12% = 36.000 · ICMS = 108.000 no Presumido e no Real',
+    inp:inpBase({rbt12:1000000, atividade:'comercio', aliqIcms:0.18, vendaMerc:800000, compraMerc:300000, aliqIcmsCompra:0.12, lucroRealInput:200000}),
+    checa:[['ICMS Presumido','icms_p',108000],['ICMS Real','icms_r',108000]] }
 ];
 
 function aprox(a,b){
@@ -2178,7 +2211,9 @@ function coletarFormulario(){
     custos:$('custos').value, despesas:$('despesas').value,
     insumosCredPC:$('insumosCredPC').value, lucroReal:$('lucroReal').value,
     aliqIcms:$('aliqIcms').value, aliqIss:$('aliqIss').value, aliqIpi:$('aliqIpi').value,
-    pctCredIcms:$('pctCredIcms').value, lc224Liminar:$('lc224Liminar').checked
+    pctCredIcms:$('pctCredIcms').value,
+    vendaMerc:$('vendaMerc').value, compraMerc:$('compraMerc').value, aliqIcmsCompra:$('aliqIcmsCompra').value,
+    lc224Liminar:$('lc224Liminar').checked
   };
   return f;
 }
@@ -2212,6 +2247,7 @@ function aplicarFormulario(f){
   $('insumosCredPC').value=f.insumosCredPC||''; $('lucroReal').value=f.lucroReal||'';
   $('aliqIcms').value=f.aliqIcms||''; $('aliqIss').value=(f.aliqIss!=null&&f.aliqIss!=='')?f.aliqIss:'2'; $('aliqIpi').value=f.aliqIpi||'';
   $('pctCredIcms').value=(f.pctCredIcms!=null&&f.pctCredIcms!=='')?f.pctCredIcms:'0';
+  $('vendaMerc').value=f.vendaMerc||''; $('compraMerc').value=f.compraMerc||''; $('aliqIcmsCompra').value=f.aliqIcmsCompra||'';
   $('lc224Liminar').checked=!!f.lc224Liminar;
   updRbt();
 }
