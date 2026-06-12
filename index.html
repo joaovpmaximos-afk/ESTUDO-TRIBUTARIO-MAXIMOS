@@ -134,35 +134,56 @@ input.money,input.perc{font-family:var(--fm); text-align:right; font-variant-num
 .note input[type=checkbox]{width:auto; margin-top:2px; flex:none; accent-color:var(--green-deep)}
 
 /* ===== RBT12 ===== */
-.rbt-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
-.rbt-cell{background:var(--surface); border:1px solid var(--hair2); border-radius:var(--r); padding:9px 11px 8px; transition:border-color .15s, box-shadow .15s}
-.rbt-cell:focus-within{border-color:var(--green); box-shadow:0 0 0 3px rgba(39,194,76,.14)}
-.rbt-cell em{display:block; font-style:normal; font-family:var(--fm); font-size:10px; letter-spacing:.1em; color:var(--faint); text-transform:uppercase; margin-bottom:3px}
-.rbt-cell input{border:none; padding:0; border-radius:0; background:transparent; font-family:var(--fm); text-align:right; font-size:13.5px; font-variant-numeric:tabular-nums}
-.rbt-cell input:focus{box-shadow:none}
 .rbt-total{
   margin-top:14px; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
   border-top:2px solid var(--ink); padding-top:12px;
 }
 .rbt-total .lbl{font-family:var(--fm); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted)}
 .rbt-total .val{font-family:var(--fm); font-weight:600; font-size:24px; font-variant-numeric:tabular-nums; margin-left:auto}
-.rbt-tools{display:flex; align-items:end; gap:10px; flex-wrap:wrap; margin-top:16px}
-.rbt-tools .fill{flex:1; min-width:230px}
 
-/* ===== blocos de atividade (receitas segregadas) ===== */
-.ativ-bloco{border:1px solid var(--hair2); border-radius:13px; background:var(--surface); padding:14px 16px 15px; margin-bottom:14px}
-.ativ-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px}
-.ativ-num{font-family:var(--fm); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); flex:none}
-.ativ-head select{flex:1; min-width:240px}
-.ativ-head .ativ-total{font-family:var(--fm); font-weight:600; font-size:14.5px; font-variant-numeric:tabular-nums; margin-left:auto; white-space:nowrap}
-.ativ-head .ativ-anexo{font-family:var(--fm); font-size:10px; color:var(--green-deep); background:var(--green-soft); border:1px solid #bfe6cb; border-radius:20px; padding:3px 9px; white-space:nowrap}
-.ativ-rm{flex:none; border:1px solid var(--hair2); background:var(--surface); color:var(--muted); border-radius:8px; width:30px; height:30px; cursor:pointer; font-size:14px; line-height:1; transition:.15s}
-.ativ-rm:hover{border-color:var(--red); color:var(--red)}
-.ativ-bloco .rbt-grid{gap:8px}
-.ativ-bloco .rbt-cell{background:var(--paper)}
-.ativ-tools{display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:10px}
-.ativ-tools .fld-join{margin-left:auto; max-width:280px}
-.ativ-tools .fld-join input{font-size:12.5px; padding:7px 10px}
+/* ===== matriz mês × anexo (receitas segregadas por mês) ===== */
+.matriz-wrap{overflow-x:auto; border:1px solid var(--hair2); border-radius:13px; background:var(--surface)}
+.matriz{width:100%; border-collapse:collapse; min-width:580px}
+.matriz thead th{
+  font-family:var(--fm); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--muted); font-weight:500; padding:10px 10px 9px; border-bottom:1px solid var(--hair);
+  background:var(--paper); text-align:left; vertical-align:top;
+}
+.matriz th.m-mes, .matriz td.m-mes{width:62px; white-space:nowrap}
+.matriz td.m-mes{
+  font-family:var(--fm); font-size:9.5px; color:var(--faint); text-transform:uppercase;
+  letter-spacing:.08em; padding:0 8px 0 14px; background:var(--paper); border-right:1px solid var(--hair);
+}
+.matriz tbody td{border-bottom:1px solid var(--hair); padding:0}
+.matriz td.m-cel input{
+  width:100%; min-width:104px; border:none; border-radius:0; background:transparent;
+  padding:8px 11px; font-family:var(--fm); text-align:right; font-variant-numeric:tabular-nums; font-size:12.5px;
+}
+.matriz td.m-cel input:focus{box-shadow:inset 0 0 0 2px var(--green); background:#fff}
+.matriz td.m-cel{border-right:1px dashed var(--hair)}
+.matriz td.m-tot{
+  font-family:var(--fm); text-align:right; padding:8px 13px; color:var(--muted);
+  font-variant-numeric:tabular-nums; font-size:12px; background:var(--paper); white-space:nowrap; width:112px;
+}
+.m-head-row{display:flex; gap:6px; align-items:center}
+.m-head-row select{font-size:11.5px; padding:6px 7px; min-width:138px}
+.m-rm{flex:none; border:1px solid var(--hair2); background:var(--surface); color:var(--muted); border-radius:7px; width:26px; height:28px; cursor:pointer; font-size:12px; line-height:1; transition:.15s}
+.m-rm:hover{border-color:var(--red); color:var(--red)}
+.m-badge{
+  font-family:var(--fm); font-size:9px; color:var(--green-deep); background:var(--green-soft);
+  border:1px solid #bfe6cb; border-radius:20px; padding:3px 8px; white-space:nowrap;
+  display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; margin-top:6px; text-transform:none; letter-spacing:0;
+}
+.matriz tfoot td{
+  border-top:2px solid var(--ink); padding:10px 11px; font-family:var(--fm); font-weight:600;
+  text-align:right; font-variant-numeric:tabular-nums; font-size:12.5px; white-space:nowrap;
+}
+.matriz tfoot td:first-child{font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); font-weight:500; text-align:left; padding-left:14px}
+.matriz tfoot td.m-glob{color:var(--green-deep)}
+.matriz tfoot tr.m-tools td{border-top:1px solid var(--hair); font-weight:400; padding:6px 6px}
+.m-tool-in{display:flex; gap:4px; align-items:center; justify-content:flex-end; flex-wrap:wrap}
+.m-tool-in .btn-text{padding:4px 6px; font-size:11.5px}
+.m-tool-in input{width:118px; font-size:11px; padding:5px 8px; border:1px solid var(--hair2); border-radius:7px; text-align:right; font-family:var(--fm)}
 .btn-add-ativ{width:100%; border:1px dashed var(--hair2); background:transparent; color:var(--muted); border-radius:13px; padding:13px; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; margin-bottom:4px}
 .btn-add-ativ:hover{border-color:var(--green); color:var(--green-deep); background:var(--green-soft)}
 
@@ -481,14 +502,15 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
   <section class="sec sec-form">
     <div class="sec-tag"><b>02</b>Receita</div>
     <div class="sec-body">
-      <h2 class="sec-title">RBT12 — receita bruta dos últimos 12 meses, por atividade</h2>
-      <p class="sec-sub">Empresas com atividades mistas: separe a receita de cada atividade (até 4 — comércio, indústria, transporte, serviços). Cada receita é tributada pelo anexo correspondente, mas a alíquota efetiva é definida pelo <b>RBT12 global</b> (soma de tudo), como manda o art. 18 da LC 123.</p>
+      <h2 class="sec-title">RBT12 — receita mensal, separada por anexo</h2>
+      <p class="sec-sub">Lance o faturamento de cada mês nas colunas das atividades — o mesmo mês pode ter receita em mais de um anexo (ex.: mês 5 com 50.000 no Anexo I e 70.000 no Anexo II). A tabela soma o mês, soma cada anexo e o <b>RBT12 global</b>; cada receita é tributada pelo anexo próprio com a alíquota definida pela soma (art. 18 §4º, LC 123).</p>
       <div id="ativBlocos"></div>
       <button class="btn-add-ativ" id="btnAddAtiv" onclick="addAtividade()">+ Adicionar atividade (até 4)</button>
       <div class="rbt-total">
-        <span class="lbl" id="rbtTotalLabel">RBT12 global (total)</span>
+        <span class="lbl" id="rbtTotalLabel">RBT12 global (soma das atividades)</span>
         <span class="val num" id="rbtTotal">R$ 0,00</span>
       </div>
+      <p style="font-size:11.5px;color:var(--muted);line-height:1.6;margin:8px 0 0">↑ O estudo inteiro parte desta soma: ela define a faixa e a alíquota efetiva de <b>todos</b> os anexos (badge verde de cada atividade) e é a receita-base do Presumido e do Real. Os valores lançados no Anexo I somam com os do II, III, IV…</p>
       <div class="note blue" style="margin-top:18px">
         <label class="switch">
           <input type="checkbox" id="mediaFormulada" onchange="updRbt()">
@@ -508,15 +530,15 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
       <div class="grid g4">
         <div>
           <label>Folha CLT anual <span class="q">(salários + 13º + férias)</span></label>
-          <input class="money" id="folha" placeholder="0,00">
+          <input class="money" id="folha" placeholder="0,00" oninput="updRbt()">
         </div>
         <div>
           <label>Pró-labore anual</label>
-          <input class="money" id="prolabore" placeholder="0,00">
+          <input class="money" id="prolabore" placeholder="0,00" oninput="updRbt()">
         </div>
         <div>
           <label>FGTS anual <span class="q">(compõe o Fator R)</span></label>
-          <input class="money" id="fgts" placeholder="0,00">
+          <input class="money" id="fgts" placeholder="0,00" oninput="updRbt()">
         </div>
         <div>
           <label>INSS patronal s/ folha (%) <span class="q">(20% + RAT + terceiros)</span></label>
@@ -792,43 +814,50 @@ function anexoCurto(tipo){
 const MAX_ATIVS = 4;
 
 function buildAtividades(dados){
-  // dados: [{tipo, rbt:[12 strings]}]
+  // dados: [{tipo, rbt:[12 strings]}] — renderiza a MATRIZ mês (linhas) × anexo (colunas)
   if(!dados || !dados.length) dados = [{tipo:'comercio', rbt:[]}];
   dados = dados.slice(0, MAX_ATIVS);
-  $('ativBlocos').innerHTML = dados.map((a,ai)=>{
+  const heads = dados.map((a,ai)=>{
     const opts = TIPOS.map(([v,l])=>`<option value="${v}"${v===a.tipo?' selected':''}>${l}</option>`).join('');
-    const cells = MESES_NOMES.map((m,i)=>
-      `<div class="rbt-cell"><em>${m}</em><input class="rbtm" data-a="${ai}" data-i="${i}" placeholder="0,00" inputmode="decimal" oninput="updRbt()" value="${(a.rbt&&a.rbt[i])?String(a.rbt[i]).replace(/"/g,'&quot;'):''}"></div>`).join('');
-    return `<div class="ativ-bloco" data-a="${ai}">
-      <div class="ativ-head">
-        <span class="ativ-num">Atividade ${ai+1}</span>
-        <select class="ativSel" data-a="${ai}" onchange="ativTipoChange()">${opts}</select>
-        <span class="ativ-anexo" id="ativAnexo${ai}">—</span>
-        <span class="ativ-total num" id="ativTotal${ai}">R$ 0,00</span>
-        ${ai>0?`<button class="ativ-rm" onclick="rmAtividade(${ai})" title="Remover atividade">✕</button>`:''}
+    return `<th>
+      <div class="m-head-row">
+        <select class="ativSel" data-a="${ai}" onchange="ativTipoChange()" title="Atividade ${ai+1}">${opts}</select>
+        ${ai>0?`<button class="m-rm" onclick="rmAtividade(${ai})" title="Remover atividade">✕</button>`:''}
       </div>
-      <div class="rbt-grid">${cells}</div>
-      <div class="ativ-tools">
-        <button class="btn btn-text" onclick="preencherIgualA(${ai})"><span class="ic" data-ic="refresh"></span> Repetir 1º mês</button>
-        <button class="btn btn-text" onclick="zerarA(${ai})"><span class="ic" data-ic="x"></span> Zerar</button>
-        <div class="fld-join">
-          <input class="money fatAnualA" data-a="${ai}" placeholder="Anual p/ distribuir">
-          <button class="btn btn-ghost btn-sm" onclick="distribuirA(${ai})">Distribuir</button>
-        </div>
-      </div>
-    </div>`;
+      <span class="m-badge" id="ativAnexo${ai}">—</span>
+    </th>`;
   }).join('');
+  const linhas = MESES_NOMES.map((m,mi)=>{
+    const cels = dados.map((a,ai)=>
+      `<td class="m-cel"><input class="rbtm" data-a="${ai}" data-i="${mi}" placeholder="0,00" inputmode="decimal" oninput="updRbt()" value="${(a.rbt&&a.rbt[mi])?String(a.rbt[mi]).replace(/"/g,'&quot;'):''}"></td>`).join('');
+    return `<tr><td class="m-mes">${m}</td>${cels}<td class="m-tot" id="mesTotal${mi}">—</td></tr>`;
+  }).join('');
+  const totFoot = dados.map((a,ai)=>`<td id="ativTotal${ai}">R$ 0,00</td>`).join('');
+  const toolFoot = dados.map((a,ai)=>`<td><div class="m-tool-in">
+      <button class="btn btn-text" onclick="preencherIgualA(${ai})" title="Repetir o 1º mês nos 12">↺ 1º mês</button>
+      <button class="btn btn-text" onclick="zerarA(${ai})" title="Zerar esta coluna">✕ zerar</button>
+      <input class="fatAnualA" data-a="${ai}" placeholder="Anual p/ distribuir" onkeydown="if(event.key==='Enter')distribuirA(${ai})">
+      <button class="btn btn-ghost btn-sm" onclick="distribuirA(${ai})">OK</button>
+    </div></td>`).join('');
+  $('ativBlocos').innerHTML = `<div class="matriz-wrap"><table class="matriz">
+    <thead><tr><th class="m-mes">Mês</th>${heads}<th style="text-align:right">Total do mês</th></tr></thead>
+    <tbody>${linhas}</tbody>
+    <tfoot>
+      <tr><td>RBT12</td>${totFoot}<td class="m-glob" id="matrizGlobal">R$ 0,00</td></tr>
+      <tr class="m-tools"><td></td>${toolFoot}<td></td></tr>
+    </tfoot>
+  </table></div>`;
   $('btnAddAtiv').style.display = dados.length>=MAX_ATIVS ? 'none' : 'block';
-  hidratarIcones();
+  $('btnAddAtiv').textContent = `+ Adicionar atividade no mesmo estudo (${dados.length}/${MAX_ATIVS})`;
   document.querySelectorAll('.fatAnualA').forEach(i=> i.addEventListener('blur', fmtMoneyBlur));
   updRbt();
 }
 function lerAtividadesDOM(){
-  return [...document.querySelectorAll('.ativ-bloco')].map(bl=>{
-    const ai = bl.getAttribute('data-a');
+  return [...document.querySelectorAll('.ativSel')].map(sel=>{
+    const ai = sel.getAttribute('data-a');
     return {
-      tipo: bl.querySelector('.ativSel').value,
-      rbt: [...bl.querySelectorAll('.rbtm')].map(i=>i.value)
+      tipo: sel.value,
+      rbt: [...document.querySelectorAll(`.rbtm[data-a="${ai}"]`)].map(i=>i.value)
     };
   });
 }
@@ -865,13 +894,37 @@ function getRbt12(){ return getAtividades().reduce((s,a)=>s+a.rbt12,0); }
 function updRbt(){
   const ativs = lerAtividadesDOM();
   const media = $('mediaFormulada') && $('mediaFormulada').checked;
-  let global = 0;
+  const valores = ativs.map(a=>rbt12DeAtiv(a.rbt));
+  const global = valores.reduce((s,v)=>s+v,0);
+  // Fator R provisório (folha da seção 03) p/ decidir III×V no badge ao vivo
+  const massa = parseNum($('folha')?$('folha').value:0) + parseNum($('prolabore')?$('prolabore').value:0) + parseNum($('fgts')?$('fgts').value:0);
+  const fatorR = global>0 ? massa/global : 0;
   ativs.forEach((a,ai)=>{
-    const v = rbt12DeAtiv(a.rbt); global += v;
-    const el = $('ativTotal'+ai); if(el) el.textContent = fmt(v);
-    const bx = $('ativAnexo'+ai); if(bx) bx.textContent = anexoCurto(a.tipo);
+    const el = $('ativTotal'+ai); if(el) el.textContent = fmt(valores[ai]);
+    const bx = $('ativAnexo'+ai);
+    if(bx){
+      if(global>0){
+        // faixa e alíquota efetiva calculadas pela RBT12 GLOBAL (soma de todas as atividades)
+        const anexo = escolherAnexo(a.tipo, fatorR);
+        const fx = faixaSimples(anexo, global);
+        let ef = (global*fx.aliq - fx.pd)/global; if(ef<0) ef=0;
+        bx.textContent = `Anexo ${anexo} · ${fx.idx+1}ª faixa · efet. ${pct(ef*100)}`;
+        bx.title = `Faixa e alíquota definidas pela soma global de ${fmt(global)} (art. 18 §4º, LC 123)`;
+      } else {
+        bx.textContent = anexoCurto(a.tipo); bx.title='';
+      }
+    }
   });
-  if($('rbtTotalLabel')) $('rbtTotalLabel').textContent = media ? 'RBT12 global projetado (média × 12)' : 'RBT12 global (total)';
+  // total de cada mês (soma dos anexos na mesma linha)
+  for(let mi=0; mi<12; mi++){
+    const tEl = $('mesTotal'+mi);
+    if(tEl){
+      let s=0; document.querySelectorAll(`.rbtm[data-i="${mi}"]`).forEach(i=>{ s+=parseNum(i.value); });
+      tEl.textContent = s>0 ? fmt(s) : '—';
+    }
+  }
+  const mg = $('matrizGlobal'); if(mg) mg.textContent = fmt(global);
+  if($('rbtTotalLabel')) $('rbtTotalLabel').textContent = media ? 'RBT12 global projetado (média × 12)' : 'RBT12 global (soma das atividades)';
   $('rbtTotal').textContent = fmt(global);
   syncAnexoInfo();
 }
