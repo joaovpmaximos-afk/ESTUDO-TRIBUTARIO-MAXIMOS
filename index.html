@@ -618,18 +618,23 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
           <input class="money" id="vendaMerc" placeholder="auto: receita com./ind./transp.">
         </div>
         <div>
-          <label>Alíquota ICMS venda (%)</label>
-          <input class="perc" id="aliqIcms" placeholder="0">
+          <label>Alíquota ICMS venda (%) <span class="q">(18 / 12 / 4)</span></label>
+          <input class="perc" id="aliqIcms" list="icmsRates" placeholder="0">
         </div>
         <div>
           <label>Compra de mercadorias anual <span class="q">(base do crédito)</span></label>
           <input class="money" id="compraMerc" placeholder="padrão: custos × % crédito">
         </div>
         <div>
-          <label>Alíquota ICMS compra (%)</label>
-          <input class="perc" id="aliqIcmsCompra" placeholder="vazio = alíq. de venda">
+          <label>Alíquota ICMS compra (%) <span class="q">(18 / 12 / 4)</span></label>
+          <input class="perc" id="aliqIcmsCompra" list="icmsRates" placeholder="vazio = alíq. de venda">
         </div>
       </div>
+      <datalist id="icmsRates">
+        <option value="18">18% · interna (maioria dos estados)</option>
+        <option value="12">12% · interestadual</option>
+        <option value="4">4% · interestadual (importados, Res. 13/2012)</option>
+      </datalist>
       <div class="grid g4" style="margin-top:16px">
         <div>
           <label>% das compras com crédito de ICMS <span class="q">(modo automático)</span></label>
