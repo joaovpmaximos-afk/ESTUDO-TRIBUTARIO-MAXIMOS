@@ -179,6 +179,21 @@ input.money,input.perc{font-family:var(--fm); text-align:right; font-variant-num
 .proj-pc{font-family:var(--fm); font-size:11px; color:var(--muted); white-space:nowrap; margin-left:auto; font-variant-numeric:tabular-nums}
 #projResumo{font-size:12px; line-height:1.6; margin:10px 2px 0; font-family:var(--fm)}
 @media(max-width:880px){ .proj-pc{margin-left:0; width:100%; text-align:left; padding-left:24px} }
+
+/* ===== tabela de produtos / ICMS (vários itens) ===== */
+.merc-tabela{overflow-x:auto; border:1px solid var(--hair2); border-radius:13px; background:var(--surface)}
+.merc-grid{min-width:730px}
+.merc-head,.merc-row{display:grid; grid-template-columns:1.5fr 1fr 84px 1fr 84px 116px 30px; gap:8px; align-items:center; padding:8px 12px}
+.merc-head{background:var(--paper); border-bottom:1px solid var(--hair); font-family:var(--fm); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.merc-head .r{text-align:right}
+.merc-row{border-bottom:1px solid var(--hair)}
+.merc-row:last-child{border-bottom:none}
+.merc-row input{padding:7px 9px; font-size:12.5px}
+.merc-row input.money,.merc-row input.perc{text-align:right; font-family:var(--fm); font-variant-numeric:tabular-nums}
+.merc-icms{font-family:var(--fm); font-variant-numeric:tabular-nums; font-weight:600; font-size:12px; text-align:right; color:var(--ink)}
+.merc-icms.neg{color:var(--muted)}
+.merc-resumo{font-family:var(--fm); font-size:12.5px; margin:11px 2px 0; color:var(--ink2); line-height:1.6}
+.merc-resumo b{color:var(--green-deep)}
 .btn-add-ativ{width:100%; border:1px dashed var(--hair2); background:transparent; color:var(--muted); border-radius:13px; padding:13px; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; margin-bottom:4px}
 .btn-add-ativ:hover{border-color:var(--green); color:var(--green-deep); background:var(--green-soft)}
 
@@ -611,39 +626,40 @@ footer{text-align:center; color:var(--faint); font-family:var(--fm); font-size:1
     <div class="sec-tag"><b>05</b>Mercadorias</div>
     <div class="sec-body">
       <h2 class="sec-title">Compra e venda de mercadorias — ICMS</h2>
-      <p class="sec-sub">Apuração do ICMS no <b>Lucro Presumido e no Lucro Real</b>, como na prática: <b>débito</b> sobre a venda de mercadorias e <b>crédito</b> sobre a compra, cada um com sua alíquota. Também vale para a parcela fora do DAS quando o RBT12 passa do sublimite de R$ 3,6 mi.</p>
-      <div class="grid g4">
-        <div>
-          <label>Venda de mercadorias anual <span class="q">(base do débito)</span></label>
-          <input class="money" id="vendaMerc" placeholder="auto: receita com./ind./transp.">
+      <p class="sec-sub">Apuração do ICMS no <b>Lucro Presumido e no Lucro Real</b>, como na prática: <b>débito</b> sobre a venda menos <b>crédito</b> sobre a compra. Lance <b>quantos produtos precisar</b> — cada um com sua alíquota (18%, 12%, 4%…), tanto na venda quanto na compra. Também vale para a parcela fora do DAS acima do sublimite de R$ 3,6 mi.</p>
+      <div class="merc-tabela"><div class="merc-grid">
+        <div class="merc-head">
+          <span>Produto / grupo</span>
+          <span class="r">Venda R$</span>
+          <span class="r">Alíq. venda %</span>
+          <span class="r">Compra R$</span>
+          <span class="r">Alíq. compra %</span>
+          <span class="r">ICMS do item</span>
+          <span></span>
         </div>
-        <div>
-          <label>Alíquota ICMS venda (%) <span class="q">(18 / 12 / 4)</span></label>
-          <input class="perc" id="aliqIcms" list="icmsRates" placeholder="0">
-        </div>
-        <div>
-          <label>Compra de mercadorias anual <span class="q">(base do crédito)</span></label>
-          <input class="money" id="compraMerc" placeholder="padrão: custos × % crédito">
-        </div>
-        <div>
-          <label>Alíquota ICMS compra (%) <span class="q">(18 / 12 / 4)</span></label>
-          <input class="perc" id="aliqIcmsCompra" list="icmsRates" placeholder="vazio = alíq. de venda">
-        </div>
-      </div>
+        <div id="mercItens"></div>
+      </div></div>
       <datalist id="icmsRates">
         <option value="18">18% · interna (maioria dos estados)</option>
         <option value="12">12% · interestadual</option>
         <option value="4">4% · interestadual (importados, Res. 13/2012)</option>
       </datalist>
-      <div class="grid g4" style="margin-top:16px">
+      <button class="btn-add-ativ" id="btnAddMerc" onclick="addMercItem()">+ Adicionar produto / grupo de ICMS</button>
+      <p class="merc-resumo" id="mercResumo"></p>
+
+      <p class="note" style="margin-top:16px">
+        <b>ICMS = Σ(venda × alíquota) − Σ(compra × alíquota)</b> somando todos os produtos (nunca negativo). Sem nenhum produto preenchido, o sistema usa o <b>modo automático</b> abaixo: receita de comércio/indústria/transporte × alíquota padrão, menos custos × % com crédito.
+      </p>
+      <div class="grid g2" style="margin-top:14px">
+        <div>
+          <label>Alíquota ICMS padrão (%) <span class="q">(modo automático · 18 / 12 / 4)</span></label>
+          <input class="perc" id="aliqIcms" list="icmsRates" placeholder="0">
+        </div>
         <div>
           <label>% das compras com crédito de ICMS <span class="q">(modo automático)</span></label>
           <input class="perc" id="pctCredIcms" placeholder="0" value="0">
         </div>
       </div>
-      <p class="note" style="margin-top:16px">
-        <b>ICMS = venda × alíquota de venda − compra × alíquota de compra</b> (nunca negativo). Deixando venda/compra vazios, o sistema usa a receita de comércio/indústria/transporte como venda e os <b>Custos × "% das compras com crédito"</b> como crédito — comportamento dos estudos antigos.
-      </p>
       <button class="cta btn" onclick="calcular()">Calcular estudo tributário <span class="ic" data-ic="arrow"></span></button>
     </div>
   </section>
@@ -881,6 +897,54 @@ function distribuir(){
   const m = (anual/12);
   document.querySelectorAll('.rbtm').forEach(inp=> inp.value = m ? m.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '');
   updRbt();
+}
+
+/* --- tabela de produtos / ICMS: vários itens, cada um com venda/compra e alíquotas próprias --- */
+const MAX_MERC = 12;
+function buildMerc(itens){
+  if(!itens || !itens.length) itens = [{desc:'',venda:'',aliqV:'',compra:'',aliqC:''}];
+  itens = itens.slice(0, MAX_MERC);
+  $('mercItens').innerHTML = itens.map((it,mi)=>{
+    const v = k => escapeHtml(it[k]!=null?String(it[k]):'');
+    return `<div class="merc-row" data-m="${mi}">
+      <input class="merc-desc" data-m="${mi}" placeholder="opcional" value="${v('desc')}">
+      <input class="money merc-venda" data-m="${mi}" placeholder="0,00" inputmode="decimal" oninput="updMerc()" value="${v('venda')}">
+      <input class="perc merc-aliqv" data-m="${mi}" list="icmsRates" placeholder="0" inputmode="decimal" oninput="updMerc()" value="${v('aliqV')}">
+      <input class="money merc-compra" data-m="${mi}" placeholder="0,00" inputmode="decimal" oninput="updMerc()" value="${v('compra')}">
+      <input class="perc merc-aliqc" data-m="${mi}" list="icmsRates" placeholder="0" inputmode="decimal" oninput="updMerc()" value="${v('aliqC')}">
+      <span class="merc-icms" id="mercIcms${mi}">—</span>
+      ${mi>0?`<button class="m-rm" onclick="rmMercItem(${mi})" title="Remover produto">✕</button>`:'<span></span>'}
+    </div>`;
+  }).join('');
+  const btn=$('btnAddMerc'); if(btn){ btn.style.display = itens.length>=MAX_MERC?'none':'block'; btn.textContent=`+ Adicionar produto / grupo de ICMS (${itens.length}/${MAX_MERC})`; }
+  $('mercItens').querySelectorAll('.money').forEach(i=> i.addEventListener('blur', fmtMoneyBlur));
+  updMerc();
+}
+function lerMercDOM(){
+  return [...document.querySelectorAll('#mercItens .merc-row')].map(r=>({
+    desc:r.querySelector('.merc-desc').value,
+    venda:r.querySelector('.merc-venda').value,
+    aliqV:r.querySelector('.merc-aliqv').value,
+    compra:r.querySelector('.merc-compra').value,
+    aliqC:r.querySelector('.merc-aliqc').value
+  }));
+}
+function addMercItem(){ const it=lerMercDOM(); if(it.length>=MAX_MERC) return; it.push({desc:'',venda:'',aliqV:'',compra:'',aliqC:''}); buildMerc(it); }
+function rmMercItem(mi){ const it=lerMercDOM(); it.splice(mi,1); buildMerc(it); }
+function updMerc(){
+  let deb=0, cred=0;
+  lerMercDOM().forEach((it,mi)=>{
+    const v=parseNum(it.venda), av=parseNum(it.aliqV)/100, c=parseNum(it.compra), ac=parseNum(it.aliqC)/100;
+    const d=v*av, cr=c*ac; deb+=d; cred+=cr;
+    const el=$('mercIcms'+mi);
+    if(el){ const liq=d-cr; el.textContent=(v>0||c>0)?fmt(liq):'—'; el.classList.toggle('neg', liq<0); }
+  });
+  const icms=Math.max(0,deb-cred);
+  const res=$('mercResumo');
+  if(res){
+    if(deb<=0 && cred<=0) res.innerHTML='<span style="color:var(--faint)">Nenhum produto lançado — o ICMS usará o modo automático abaixo.</span>';
+    else res.innerHTML=`Débito ${fmt(deb)} − crédito ${fmt(cred)} = <b>ICMS ${fmt(icms)}</b>`+((deb-cred)<-0.005?' <span style="color:var(--muted)">(crédito acumulado — ICMS do período zerado)</span>':'');
+  }
 }
 
 /* --- projeção por anexo: divide o RBT12 entre até 4 atividades.
@@ -1250,9 +1314,7 @@ function calcular(){
     aliqIss: parseNum($('aliqIss').value)/100,
     aliqIpi: parseNum($('aliqIpi').value)/100,
     pctCredIcms: parseNum($('pctCredIcms').value)/100,
-    vendaMerc: $('vendaMerc').value ? parseNum($('vendaMerc').value) : null,
-    compraMerc: $('compraMerc').value ? parseNum($('compraMerc').value) : null,
-    aliqIcmsCompra: parseNum($('aliqIcmsCompra').value)/100,
+    mercItens: lerMercDOM().map(it=>({desc:it.desc, venda:parseNum(it.venda), aliqV:parseNum(it.aliqV)/100, compra:parseNum(it.compra), aliqC:parseNum(it.aliqC)/100})),
     inssPatronal: parseNum($('inssPatronal').value)/100,
     lucroRealInput: $('lucroReal').value ? parseNum($('lucroReal').value) : null,
     lc224Liminar: $('lc224Liminar') ? $('lc224Liminar').checked : false,
@@ -1294,14 +1356,31 @@ function engine(inp){
   // ISS fora do Simples: piso constitucional de 2% (EC 37/2002 / LC 116) — vale p/ Presumido, Real e sublimite
   const aliqIssCalc = Math.max(aliqIss||0, 0.02);
 
-  /* ICMS débito × crédito (Presumido/Real e parcela fora do DAS no sublimite):
-     débito  = venda de mercadorias × alíq. venda   (vendaMerc vazio → receita de comércio/ind./transporte)
-     crédito = compra de mercadorias × alíq. compra (compraMerc vazio → custos × % compras c/ crédito × alíq. venda) */
-  const baseDebIcms = (vendaMerc!=null && vendaMerc!==undefined) ? vendaMerc*f : recICMS;
-  const aliqCompraCalc = (aliqIcmsCompra>0) ? aliqIcmsCompra : (aliqIcms||0);
-  const credIcms = (compraMerc!=null && compraMerc!==undefined) ? compraMerc*f*aliqCompraCalc : custosPer*pctCredIcms*(aliqIcms||0);
-  const icmsNormal = Math.max(0, baseDebIcms*(aliqIcms||0) - credIcms);
-  const temIcms = (recICMS>0 || baseDebIcms>0);
+  /* ICMS débito × crédito (Presumido/Real e parcela fora do DAS no sublimite).
+     1) itens de mercadoria — vários produtos, cada um com alíquota de venda/compra própria;
+     2) campos únicos venda/compra (retrocompat de estudos antigos);
+     3) modo automático: receita de comércio × alíq. padrão − custos × % crédito × alíq. */
+  const mercItens = (inp.mercItens||[]).map(it=>({
+    venda:(Number(it.venda)||0)*f, aliqV:Number(it.aliqV)||0,
+    compra:(Number(it.compra)||0)*f, aliqC:Number(it.aliqC)||0
+  })).filter(it=> it.venda>0 || it.compra>0);
+  const icmsMultiItens = mercItens.length>0;
+  let baseDebIcms, debIcms, credIcms, aliqIcmsExib, temIcms;
+  if(icmsMultiItens){
+    debIcms  = mercItens.reduce((s,it)=> s + it.venda*it.aliqV, 0);
+    credIcms = mercItens.reduce((s,it)=> s + it.compra*it.aliqC, 0);
+    baseDebIcms = mercItens.reduce((s,it)=> s + it.venda, 0);
+    aliqIcmsExib = baseDebIcms>0 ? debIcms/baseDebIcms : 0;   // alíquota média ponderada (só p/ exibição)
+    temIcms = baseDebIcms>0 || credIcms>0;
+  } else {
+    baseDebIcms = (vendaMerc!=null && vendaMerc!==undefined) ? vendaMerc*f : recICMS;
+    const aliqCompraCalc = (aliqIcmsCompra>0) ? aliqIcmsCompra : (aliqIcms||0);
+    credIcms = (compraMerc!=null && compraMerc!==undefined) ? compraMerc*f*aliqCompraCalc : custosPer*pctCredIcms*(aliqIcms||0);
+    debIcms = baseDebIcms*(aliqIcms||0);
+    aliqIcmsExib = aliqIcms||0;
+    temIcms = (recICMS>0 || baseDebIcms>0);
+  }
+  const icmsNormal = Math.max(0, debIcms - credIcms);
 
   const warnings = [];
   const usaFatorR = ativs.some(a=>['servico_iii','servico_v'].includes(a.tipo));
@@ -1373,7 +1452,7 @@ function engine(inp){
     .filter(k=> agg[k]!=null && agg[k]>1e-9)
     .map(k=>({label:'DAS · '+repNomes[k], valor:agg[k], base:receita, nominal:null}));
   if(cpp_simples>0) compSimples.push({label:'INSS patronal (fora do DAS — Anexo IV'+(receita-recIV>0.005?', proporcional':'')+')', valor:cpp_simples, base:folhaPer+proPer, nominal:null});
-  if(icms_s>0) compSimples.push({label:'ICMS fora do DAS (sublimite, débito − crédito)', valor:icms_s, base:baseDebIcms, nominal:aliqIcms*100});
+  if(icms_s>0) compSimples.push({label:'ICMS fora do DAS (sublimite, débito − crédito)', valor:icms_s, base:baseDebIcms, nominal:aliqIcmsExib*100});
   if(iss_s>0) compSimples.push({label:'ISS fora do DAS (sublimite)', valor:iss_s, base:recISS, nominal:aliqIssCalc*100});
 
   const anexosUsados = [...new Set(detAtivs.map(d=>d.anexo))];
@@ -1393,7 +1472,7 @@ function engine(inp){
   if(excedeSimples) warnings.push({t:'warn', m:'RBT12 global acima de R$ 4,8 mi — empresa fora do Simples; o cartão é exibido apenas como referência e não concorre como melhor regime.'});
   else if(rbt12 > SUBLIMITE){
     warnings.push({t:'info', m:'RBT12 global acima do sublimite de R$ 3,6 mi: ICMS/ISS saíram do DAS e foram calculados por fora, pela apuração normal.'});
-    if(temIcms && aliqIcms===0) warnings.push({t:'warn', m:'Informe a alíquota de ICMS — com o sublimite ativo, o ICMS por fora está zerado.'});
+    if(temIcms && !icmsMultiItens && aliqIcms===0) warnings.push({t:'warn', m:'Informe a alíquota de ICMS — com o sublimite ativo, o ICMS por fora está zerado.'});
   }
   if(usaFatorR && fatorR<0.28 && fatorR>=0.22)
     warnings.push({t:'info', m:`Fator R em ${pct(fatorR*100)} — faltam ${pct((0.28-fatorR)*100)} de folha/RBT12 para migrar do Anexo V ao III. Avalie ajustar o pró-labore.`});
@@ -1446,7 +1525,7 @@ function engine(inp){
       {label:'PIS (cumulativo)', valor:pis_p, base:receita, nominal:0.65},
       {label:'COFINS (cumulativo)', valor:cofins_p, base:receita, nominal:3},
       ...(iss_p>0?[{label:'ISS', valor:iss_p, base:recISS, nominal:aliqIssCalc*100}]:[]),
-      ...(icms_p>0?[{label:'ICMS (débito − crédito)', valor:icms_p, base:baseDebIcms, nominal:aliqIcms*100}]:[]),
+      ...(icms_p>0?[{label:'ICMS (débito − crédito)', valor:icms_p, base:baseDebIcms, nominal:aliqIcmsExib*100}]:[]),
       ...(ipi_p>0?[{label:'IPI', valor:ipi_p, base:recIPI, nominal:aliqIpi*100}]:[]),
       ...(cpp_p>0?[{label:'INSS patronal', valor:cpp_p, base:folhaPer+proPer, nominal:null}]:[])
     ]
@@ -1481,7 +1560,7 @@ function engine(inp){
       {label:'PIS não-cumulativo', valor:pis_r, base:Math.max(0,receita-baseCred), nominal:1.65},
       {label:'COFINS não-cumulativo', valor:cofins_r, base:Math.max(0,receita-baseCred), nominal:7.6},
       ...(iss_r>0?[{label:'ISS', valor:iss_r, base:recISS, nominal:aliqIssCalc*100}]:[]),
-      ...(icms_r>0?[{label:'ICMS (débito − crédito)', valor:icms_r, base:baseDebIcms, nominal:aliqIcms*100}]:[]),
+      ...(icms_r>0?[{label:'ICMS (débito − crédito)', valor:icms_r, base:baseDebIcms, nominal:aliqIcmsExib*100}]:[]),
       ...(ipi_r>0?[{label:'IPI', valor:ipi_r, base:recIPI, nominal:aliqIpi*100}]:[]),
       ...(cpp_r>0?[{label:'INSS patronal', valor:cpp_r, base:folhaPer+proPer, nominal:null}]:[])
     ]
@@ -1489,7 +1568,7 @@ function engine(inp){
 
   if(recISS>0 && aliqIss<0.02)
     warnings.push({t:'info', m:'ISS aplicado no piso legal de 2% (EC 37/2002) no Presumido e no Real'+(rbt12>SUBLIMITE?' e na parcela fora do DAS':'')+' — informe a alíquota do município na seção 04 se for maior.'});
-  if(temIcms && aliqIcms===0 && rbt12<=SUBLIMITE)
+  if(temIcms && !icmsMultiItens && aliqIcms===0 && rbt12<=SUBLIMITE)
     warnings.push({t:'warn', m:'Alíquota de ICMS não informada — Presumido e Real estão sem ICMS; o comparativo pode favorecê-los indevidamente.'});
   if(aplicaLC224)
     warnings.push({t:'info', m:'LC 224/2025 aplicada no Presumido (+10% na presunção, faturamento > R$ 5 mi). Havendo liminar, marque a opção na seção 04.'});
@@ -1938,7 +2017,7 @@ function inpBase(over){
     rbt12:0, meses:12, atividade:'comercio',
     folha:0, prolabore:0, fgts:0, custos:0, despesas:0,
     aliqIcms:0, aliqIss:0, aliqIpi:0, pctCredIcms:0, inssPatronal:0.268,
-    vendaMerc:null, compraMerc:null, aliqIcmsCompra:0,
+    vendaMerc:null, compraMerc:null, aliqIcmsCompra:0, mercItens:[],
     lucroRealInput:0, lc224Liminar:false, insumosCredPC:null
   }, over);
 }
@@ -2061,7 +2140,16 @@ const TESTES = [
   { nome:'ICMS débito × crédito — venda e compra de mercadorias com alíquotas próprias',
     memoria:'Débito: venda 800.000 × 18% = 144.000 · Crédito: compra 300.000 × 12% = 36.000 · ICMS = 108.000 no Presumido e no Real',
     inp:inpBase({rbt12:1000000, atividade:'comercio', aliqIcms:0.18, vendaMerc:800000, compraMerc:300000, aliqIcmsCompra:0.12, lucroRealInput:200000}),
-    checa:[['ICMS Presumido','icms_p',108000],['ICMS Real','icms_r',108000]] }
+    checa:[['ICMS Presumido','icms_p',108000],['ICMS Real','icms_r',108000]] },
+
+  { nome:'ICMS vários produtos — débitos e créditos por alíquota (18 / 12 / 4)',
+    memoria:'Débito: 500.000×18% + 300.000×12% + 200.000×4% = 90.000+36.000+8.000 = 134.000 · Crédito: 250.000×18% + 150.000×12% = 45.000+18.000 = 63.000 · ICMS = 71.000',
+    inp:inpBase({rbt12:1000000, atividade:'comercio', lucroRealInput:200000, mercItens:[
+      {venda:500000,aliqV:0.18,compra:250000,aliqC:0.18},
+      {venda:300000,aliqV:0.12,compra:150000,aliqC:0.12},
+      {venda:200000,aliqV:0.04,compra:0,aliqC:0}
+    ]}),
+    checa:[['ICMS Presumido','icms_p',71000],['ICMS Real','icms_r',71000]] }
 ];
 
 function aprox(a,b){
@@ -2230,7 +2318,7 @@ function coletarFormulario(){
     insumosCredPC:$('insumosCredPC').value, lucroReal:$('lucroReal').value,
     aliqIcms:$('aliqIcms').value, aliqIss:$('aliqIss').value, aliqIpi:$('aliqIpi').value,
     pctCredIcms:$('pctCredIcms').value,
-    vendaMerc:$('vendaMerc').value, compraMerc:$('compraMerc').value, aliqIcmsCompra:$('aliqIcmsCompra').value,
+    mercItens:lerMercDOM(),
     lc224Liminar:$('lc224Liminar').checked
   };
   return f;
@@ -2265,7 +2353,14 @@ function aplicarFormulario(f){
   $('insumosCredPC').value=f.insumosCredPC||''; $('lucroReal').value=f.lucroReal||'';
   $('aliqIcms').value=f.aliqIcms||''; $('aliqIss').value=(f.aliqIss!=null&&f.aliqIss!=='')?f.aliqIss:'2'; $('aliqIpi').value=f.aliqIpi||'';
   $('pctCredIcms').value=(f.pctCredIcms!=null&&f.pctCredIcms!=='')?f.pctCredIcms:'0';
-  $('vendaMerc').value=f.vendaMerc||''; $('compraMerc').value=f.compraMerc||''; $('aliqIcmsCompra').value=f.aliqIcmsCompra||'';
+  // mercadorias: formato novo (mercItens[]) ou migração dos campos únicos antigos (venda/compra)
+  if(f.mercItens && f.mercItens.length){
+    buildMerc(f.mercItens);
+  } else if((f.vendaMerc && parseNum(f.vendaMerc)>0) || (f.compraMerc && parseNum(f.compraMerc)>0)){
+    buildMerc([{desc:'', venda:f.vendaMerc||'', aliqV:f.aliqIcms||'', compra:f.compraMerc||'', aliqC:f.aliqIcmsCompra||f.aliqIcms||''}]);
+  } else {
+    buildMerc([{desc:'',venda:'',aliqV:'',compra:'',aliqC:''}]);
+  }
   $('lc224Liminar').checked=!!f.lc224Liminar;
   updRbt();
 }
@@ -2380,6 +2475,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') fecharGaleria(); 
 hidratarIcones();
 buildRbt();
 buildProjecao([{tipo:'comercio', valor:''}]);
+buildMerc();
 document.querySelectorAll('input.money').forEach(i=> i.addEventListener('blur', fmtMoneyBlur));
 estudosCache = supa ? [] : lerEstudos();
 atualizarGaleriaCount();
